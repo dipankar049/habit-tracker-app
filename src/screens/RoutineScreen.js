@@ -10,6 +10,7 @@ import {
   TextInput,
   Alert,
   FlatList,
+  RefreshControl,
 } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
 import api from '../services/api';
@@ -27,6 +28,7 @@ export default function RoutineScreen() {
     frequency: 'daily', // daily, weekly, fixed
     daysOfWeek: [],
   });
+  const [refreshing, setRefreshing] = useState(false);
 
   const frequencies = ['daily', 'weekly', 'fixed'];
   const daysOfWeekOptions = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -40,7 +42,11 @@ export default function RoutineScreen() {
       setTasks(res.data || []);
     } catch (error) {
       console.error('Error fetching routine:', error);
-      Alert.alert('Error', 'Failed to fetch routine');
+      toast.show("Failed to fetch routine", {
+        type: 'danger',
+        duration: 3000,
+        placement: 'top',
+      });
     } finally {
       setLoading(false);
     }
@@ -52,7 +58,11 @@ export default function RoutineScreen() {
 
   const handleAddTask = async () => {
     if (!newTask.title.trim() || !newTask.defaultDuration) {
-      Alert.alert('Error', 'Please fill all required fields');
+      toast.show("Please fill all required fields", {
+        type: 'warning',
+        duration: 3000,
+        placement: 'top',
+      });
       return;
     }
 
@@ -77,13 +87,21 @@ export default function RoutineScreen() {
         daysOfWeek: [],
       });
     } catch (error) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to add task');
+      toast.show((error.response?.data?.message || 'Failed to add task'), {
+        type: 'danger',
+        duration: 3000,
+        placement: 'top',
+      });
     }
   };
 
   const handleUpdateTask = async () => {
     if (!newTask.title.trim() || !newTask.defaultDuration) {
-      Alert.alert('Error', 'Please fill all required fields');
+      toast.show("Please fill all required fields", {
+        type: 'warning',
+        duration: 3000,
+        placement: 'top',
+      });
       return;
     }
 
@@ -113,7 +131,11 @@ export default function RoutineScreen() {
         daysOfWeek: [],
       });
     } catch (error) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to update task');
+      toast.show((error.response?.data?.message || 'Failed to update task'), {
+        type: 'danger',
+        duration: 3000,
+        placement: 'top',
+      });
     }
   };
 
@@ -131,7 +153,11 @@ export default function RoutineScreen() {
             });
             setTasks((prev) => prev.filter((task) => task._id !== id));
           } catch (error) {
-            Alert.alert('Error', 'Failed to delete task');
+            toast.show('Failed to delete task', {
+              type: 'danger',
+              duration: 3000,
+              placement: 'top',
+            });
           } finally {
             setDeleteLoading(null);
           }
@@ -174,6 +200,12 @@ export default function RoutineScreen() {
     });
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchRoutine();
+    setRefreshing(false);
+  };
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -203,7 +235,13 @@ export default function RoutineScreen() {
           <Text style={styles.emptyStateSubtext}>Add a task to get started</Text>
         </View>
       ) : (
-        <ScrollView style={styles.tasksList} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          style={styles.tasksList}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          showsVerticalScrollIndicator={false}
+        >
           {tasks.map((task) => (
             <View key={task._id} style={styles.taskCard}>
               <View style={styles.taskInfo}>

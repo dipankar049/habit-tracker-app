@@ -59,7 +59,12 @@ export default function CalendarScreen() {
 
   const handleAddEvent = async () => {
     if (!newEvent.title.trim()) {
-      Alert.alert('Error', 'Please enter event title');
+      // Alert.alert('Error', 'Please enter event title');
+      toast.show('Please enter event title', {
+        type: 'danger',
+        duration: 3000,
+        placement: 'top',
+      });
       return;
     }
 
@@ -89,7 +94,12 @@ export default function CalendarScreen() {
         scheduledDate: new Date().toISOString().split('T')[0],
       });
     } catch (error) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to add event');
+      // Alert.alert('Error', error.response?.data?.message || 'Failed to add event');
+      toast.show((error.response?.data?.message || 'Failed to add event'), {
+        type: 'danger',
+        duration: 3000,
+        placement: 'top',
+      });
     }
   };
 
@@ -107,7 +117,12 @@ export default function CalendarScreen() {
         )
       );
     } catch (error) {
-      Alert.alert('Error', 'Failed to update event');
+      // Alert.alert('Error', 'Failed to update event');
+      toast.show((error.response?.data?.message || 'Failed to update event'), {
+        type: 'danger',
+        duration: 3000,
+        placement: 'top',
+      });
     }
   };
 
@@ -121,7 +136,12 @@ export default function CalendarScreen() {
       setDeleteModalOpen(false);
       setEventToDelete(null);
     } catch (error) {
-      Alert.alert('Error', 'Failed to delete event');
+      // Alert.alert('Error', 'Failed to delete event');
+      toast.show('Failed to delete event', {
+        type: 'danger',
+        duration: 3000,
+        placement: 'top',
+      });
     }
   };
 

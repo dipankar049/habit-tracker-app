@@ -6,23 +6,28 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import api from '../services/api';
 import { useAuth } from '../auth/AuthContext';
 import { validateUserInput } from '../utils/validateInput';
+import { useToast } from 'react-native-toast-notifications';
 
 export default function LoginScreen({ navigation }) {
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const toast = useToast();
 
   const handleLogin = async () => {
     setLoading(true);
 
     const validation = validateUserInput(form);
     if (!validation.isValid) {
-      Alert.alert('Error', validation.message);
+      toast.show(validation.message, {
+        type: 'danger',
+        duration: 3000,
+        placement: 'top',
+      });
       setLoading(false);
       return;
     }
@@ -34,16 +39,25 @@ export default function LoginScreen({ navigation }) {
       });
 
       await login(res.data.user, res.data.token);
-      Alert.alert('Success', res.data.message);
+      toast.show('Login successful', {
+        type: 'success',
+        duration: 3000,
+        placement: 'top',
+      });
     } catch (err) {
       console.log(err);
       if (err.response?.data) {
-        Alert.alert(
-          'Login Failed',
-          err.response.data.message || err.response.data.error
-        );
+        toast.show((err.response.data.message || err.response.data.error || 'Login Failed'), {
+          type: 'danger',
+          duration: 3000,
+          placement: 'top',
+        });
       } else {
-        Alert.alert('Error', 'Something went wrong');
+        toast.show('Something went wrong', {
+          type: 'danger',
+          duration: 3000,
+          placement: 'top',
+        });
       }
     } finally {
       setLoading(false);

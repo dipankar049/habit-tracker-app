@@ -5,15 +5,16 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import api from '../services/api';
 import { validateUserInput } from '../utils/validateInput';
+import { useToast } from 'react-native-toast-notifications';
 
 export default function RegisterScreen() {
   const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
+  const toast = useToast();
   const [form, setForm] = useState({
     username: '',
     email: '',
@@ -30,7 +31,11 @@ export default function RegisterScreen() {
     });
 
     if (!validation.isValid) {
-      Alert.alert('Error', validation.message);
+      toast.show(validation.message, {
+        type: 'danger',
+        duration: 3000,
+        placement: 'top',
+      });
       setLoading(false);
       return;
     }
@@ -42,16 +47,25 @@ export default function RegisterScreen() {
         password: form.password,
       });
 
-      Alert.alert('Success', res.data.message);
+      toast.show((res.data.message || 'Success'), {
+        type: 'success',
+        duration: 3000,
+        placement: 'top',
+      });
       navigation.replace('Login');
     } catch (err) {
       if (err.response?.data) {
-        Alert.alert(
-          'Error',
-          err.response.data.message || err.response.data.error
-        );
+        toast.show((err.response.data.message || err.response.data.error || "Failed to Register"), {
+          type: 'danger',
+          duration: 3000,
+          placement: 'top',
+        });
       } else {
-        Alert.alert('Error', 'Something went wrong');
+        toast.show("Something went wrong", {
+          type: 'danger',
+          duration: 3000,
+          placement: 'top',
+        });
       }
     } finally {
       setLoading(false);

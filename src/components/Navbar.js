@@ -1,8 +1,10 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
+import { useNavigation } from '@react-navigation/native';
 
 export default function Navbar({ toggleSidebar }) {
   const { user } = useAuth();
+  const navigation = useNavigation();
 
   return (
     <View style={styles.navbar}>
@@ -21,11 +23,17 @@ export default function Navbar({ toggleSidebar }) {
 
       {/* User Profile Button */}
       {user && (
-        <View style={styles.profileButton}>
+        <Pressable 
+          // onPress={() => navigation.navigate('Profile')}
+          onPress={() => navigation.navigate('HomeLayout', {
+            screen: "Profile",
+          })}
+          style={styles.profileButton}
+        >
           <Text style={styles.profileInitial}>
             {user.username?.slice(0, 1).toUpperCase()}
           </Text>
-        </View>
+        </Pressable>
       )}
     </View>
   );

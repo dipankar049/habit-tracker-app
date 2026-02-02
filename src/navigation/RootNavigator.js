@@ -1,13 +1,17 @@
 import { useAuth } from '../auth/AuthContext';
 import AuthStack from './AuthStack';
 import AppStack from './AppStack';
-import { ActivityIndicator } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 export default function RootNavigator() {
   const { token, loading } = useAuth();
 
   if (loading) {
-    return <ActivityIndicator size="large" />;
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    );
   }
 
   return token ? <AppStack /> : <AuthStack />;
