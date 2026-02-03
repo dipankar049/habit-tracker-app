@@ -9,7 +9,6 @@ import {
   Modal,
   TextInput,
   Alert,
-  FlatList,
   RefreshControl,
 } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
@@ -17,22 +16,36 @@ import api from '../services/api';
 
 export default function RoutineScreen() {
   const { token } = useAuth();
+
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(null);
+
   const [newTask, setNewTask] = useState({
     title: '',
     defaultDuration: '',
-    frequency: 'daily', // daily, weekly, fixed
+    frequency: 'fixed', // fixed | flexible | alternate
     daysOfWeek: [],
+    timesPerWeek: '',
   });
-  const [refreshing, setRefreshing] = useState(false);
 
-  const frequencies = ['daily', 'weekly', 'fixed'];
-  const daysOfWeekOptions = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const frequencies = ['fixed', 'flexible', 'alternate'];
 
+  const daysOfWeekOptions = [
+    { label: 'Sun', value: 0 },
+    { label: 'Mon', value: 1 },
+    { label: 'Tue', value: 2 },
+    { label: 'Wed', value: 3 },
+    { label: 'Thu', value: 4 },
+    { label: 'Fri', value: 5 },
+    { label: 'Sat', value: 6 },
+  ];
+
+  /* ---------------- FETCH ---------------- */
   const fetchRoutine = async () => {
     setLoading(true);
     try {
@@ -40,13 +53,8 @@ export default function RoutineScreen() {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTasks(res.data || []);
-    } catch (error) {
-      console.error('Error fetching routine:', error);
-      toast.show("Failed to fetch routine", {
-        type: 'danger',
-        duration: 3000,
-        placement: 'top',
-      });
+    } catch (err) {
+      toast.show('Failed to fetch routine', { type: 'danger' });
     } finally {
       setLoading(false);
     }
@@ -56,91 +64,94 @@ export default function RoutineScreen() {
     if (token) fetchRoutine();
   }, [token]);
 
-  const handleAddTask = async () => {
+  /* ---------------- VALIDATION ---------------- */
+  const validateTask = () => {
     if (!newTask.title.trim() || !newTask.defaultDuration) {
-      toast.show("Please fill all required fields", {
-        type: 'warning',
-        duration: 3000,
-        placement: 'top',
-      });
-      return;
+      toast.show('Title & duration required', { type: 'warning' });
+      console.log("Returning...")
+      return false;
     }
+
+    if (
+      newTask.frequency === 'fixed' &&
+      newTask.daysOfWeek.length === 0
+    ) {
+      toast.show('Select at least one day', { type: 'warning' });
+      return false;
+    }
+
+    if (
+      newTask.frequency === 'flexible' &&
+      !newTask.timesPerWeek
+    ) {
+      toast.show('Enter times per week', { type: 'warning' });
+      return false;
+    }
+
+    return true;
+  };
+
+  /* ---------------- ADD ---------------- */
+  const handleAddTask = async () => {
+    if (!validateTask()) return;
 
     try {
       const res = await api.post(
         '/routine',
         {
           title: newTask.title,
-          defaultDuration: parseInt(newTask.defaultDuration),
+          defaultDuration: Number(newTask.defaultDuration),
           frequency: newTask.frequency,
-          daysOfWeek: newTask.frequency === 'fixed' ? newTask.daysOfWeek : [],
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
+          daysOfWeek:
+            newTask.frequency === 'fixed'
+              ? newTask.daysOfWeek
+              : [],
+          timesPerWeek:
+            newTask.frequency === 'flexible'
+              ? Number(newTask.timesPerWeek)
+              : undefined,
+        }
       );
-
-      setTasks((prev) => [...prev, res.data]);
-      setIsModalOpen(false);
-      setNewTask({
-        title: '',
-        defaultDuration: '',
-        frequency: 'daily',
-        daysOfWeek: [],
-      });
-    } catch (error) {
-      toast.show((error.response?.data?.message || 'Failed to add task'), {
-        type: 'danger',
-        duration: 3000,
-        placement: 'top',
-      });
+      // setTasks((prev) => [...prev, res.data]);
+      await fetchRoutine();
+      closeModal();
+    } catch (err) {
+      toast.show('Failed to add task', { type: 'danger' });
     }
   };
 
+  /* ---------------- UPDATE ---------------- */
   const handleUpdateTask = async () => {
-    if (!newTask.title.trim() || !newTask.defaultDuration) {
-      toast.show("Please fill all required fields", {
-        type: 'warning',
-        duration: 3000,
-        placement: 'top',
-      });
-      return;
-    }
+    if (!validateTask()) return;
 
     try {
       const res = await api.put(
         `/routine/${selectedTask._id}`,
         {
           title: newTask.title,
-          defaultDuration: parseInt(newTask.defaultDuration),
+          defaultDuration: Number(newTask.defaultDuration),
           frequency: newTask.frequency,
-          daysOfWeek: newTask.frequency === 'fixed' ? newTask.daysOfWeek : [],
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
+          daysOfWeek:
+            newTask.frequency === 'fixed'
+              ? newTask.daysOfWeek
+              : [],
+          timesPerWeek:
+            newTask.frequency === 'flexible'
+              ? Number(newTask.timesPerWeek)
+              : undefined,
+        }
       );
 
-      setTasks((prev) =>
-        prev.map((task) =>
-          task._id === selectedTask._id ? res.data : task
-        )
-      );
-      setIsModalOpen(false);
-      setSelectedTask(null);
-      setNewTask({
-        title: '',
-        defaultDuration: '',
-        frequency: 'daily',
-        daysOfWeek: [],
-      });
-    } catch (error) {
-      toast.show((error.response?.data?.message || 'Failed to update task'), {
-        type: 'danger',
-        duration: 3000,
-        placement: 'top',
-      });
+      await fetchRoutine();
+      closeModal();
+    } catch (err) {
+      toast.show('Failed to update task', { type: 'danger' });
     }
   };
 
-  const deleteTask = async (id) => {
-    Alert.alert('Delete Task', 'Are you sure you want to delete this task?', [
+  /* ---------------- DELETE ---------------- */
+  const deleteTask = (id) => {
+    Alert.alert('Delete Task', 'Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -151,13 +162,9 @@ export default function RoutineScreen() {
             await api.delete(`/routine/${id}`, {
               headers: { Authorization: `Bearer ${token}` },
             });
-            setTasks((prev) => prev.filter((task) => task._id !== id));
-          } catch (error) {
-            toast.show('Failed to delete task', {
-              type: 'danger',
-              duration: 3000,
-              placement: 'top',
-            });
+            setTasks((prev) => prev.filter((t) => t._id !== id));
+          } catch {
+            toast.show('Delete failed', { type: 'danger' });
           } finally {
             setDeleteLoading(null);
           }
@@ -166,13 +173,15 @@ export default function RoutineScreen() {
     ]);
   };
 
+  /* ---------------- MODAL HELPERS ---------------- */
   const openAddModal = () => {
     setSelectedTask(null);
     setNewTask({
       title: '',
       defaultDuration: '',
-      frequency: 'daily',
+      frequency: 'fixed',
       daysOfWeek: [],
+      timesPerWeek: '',
     });
     setIsModalOpen(true);
   };
@@ -181,23 +190,28 @@ export default function RoutineScreen() {
     setSelectedTask(task);
     setNewTask({
       title: task.title,
-      defaultDuration: task.defaultDuration.toString(),
+      defaultDuration: String(task.defaultDuration),
       frequency: task.frequency,
       daysOfWeek: task.daysOfWeek || [],
+      timesPerWeek: task.timesPerWeek
+        ? String(task.timesPerWeek)
+        : '',
     });
     setIsModalOpen(true);
   };
 
-  const toggleDaySelection = (day) => {
-    setNewTask((prev) => {
-      const isSelected = prev.daysOfWeek.includes(day);
-      return {
-        ...prev,
-        daysOfWeek: isSelected
-          ? prev.daysOfWeek.filter((d) => d !== day)
-          : [...prev.daysOfWeek, day],
-      };
-    });
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedTask(null);
+  };
+
+  const toggleDay = (day) => {
+    setNewTask((prev) => ({
+      ...prev,
+      daysOfWeek: prev.daysOfWeek.includes(day)
+        ? prev.daysOfWeek.filter((d) => d !== day)
+        : [...prev.daysOfWeek, day],
+    }));
   };
 
   const onRefresh = async () => {
@@ -206,11 +220,12 @@ export default function RoutineScreen() {
     setRefreshing(false);
   };
 
+  /* ---------------- UI ---------------- */
   if (loading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" />
-        <Text style={styles.loadingText}>Loading your routine...</Text>
+        <Text style={styles.loadingText}>Loading routine...</Text>
       </View>
     );
   }
@@ -220,77 +235,68 @@ export default function RoutineScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>📋 Manage Routine</Text>
-        <Pressable
-          style={styles.addButton}
-          onPress={openAddModal}
-        >
+        <Pressable style={styles.addButton} onPress={openAddModal}>
           <Text style={styles.addButtonText}>+ Add Task</Text>
         </Pressable>
       </View>
 
-      {/* Tasks List */}
-      {tasks.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>No tasks found</Text>
-          <Text style={styles.emptyStateSubtext}>Add a task to get started</Text>
-        </View>
-      ) : (
-        <ScrollView 
-          style={styles.tasksList}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          showsVerticalScrollIndicator={false}
-        >
-          {tasks.map((task) => (
-            <View key={task._id} style={styles.taskCard}>
-              <View style={styles.taskInfo}>
-                <Text style={styles.taskTitle}>{task.title}</Text>
-                <Text style={styles.taskDetail}>
-                  Duration: {task.defaultDuration} min
-                </Text>
-                <Text style={styles.taskDetail}>
-                  Frequency: {task.frequency}
-                </Text>
-                {task.frequency === 'fixed' && task.daysOfWeek && (
-                  <Text style={styles.taskDetail}>
-                    Days: {task.daysOfWeek.join(', ')}
-                  </Text>
-                )}
-              </View>
-
-              <View style={styles.taskActions}>
-                <Pressable
-                  style={styles.updateButton}
-                  onPress={() => openUpdateModal(task)}
-                >
-                  <Text style={styles.buttonText}>Update</Text>
-                </Pressable>
-                <Pressable
-                  style={[
-                    styles.deleteButton,
-                    deleteLoading === task._id && styles.buttonDisabled,
-                  ]}
-                  onPress={() => deleteTask(task._id)}
-                  disabled={deleteLoading === task._id}
-                >
-                  <Text style={styles.buttonText}>
-                    {deleteLoading === task._id ? 'Deleting...' : 'Delete'}
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-          ))}
-        </ScrollView>
-      )}
-
-      {/* Task Modal */}
-      <Modal
-        visible={isModalOpen}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setIsModalOpen(false)}
+      {/* List */}
+      <ScrollView
+        style={styles.tasksList}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
+        {tasks.map((task) => (
+          <View key={task._id} style={styles.taskCard}>
+            <Text style={styles.taskTitle}>{task.title}</Text>
+            <Text style={styles.taskDetail}>
+              Duration: {task.defaultDuration} min
+            </Text>
+            <Text style={styles.taskDetail}>
+              Frequency: {task.frequency}
+            </Text>
+            {task.frequency === 'fixed' && (
+              <Text style={styles.taskDetail}>
+                Days:{' '}
+                {task.daysOfWeek
+                  .map(
+                    (d) =>
+                      daysOfWeekOptions.find((opt) => opt.value === d)?.label
+                  )
+                  .join(', ')}
+              </Text>
+            )}
+
+            <View style={styles.taskActions}>
+              <Pressable
+                style={styles.updateButton}
+                onPress={() => openUpdateModal(task)}
+              >
+                <Text style={styles.buttonText}>Update</Text>
+              </Pressable>
+
+              <Pressable
+                style={[
+                  styles.deleteButton,
+                  deleteLoading === task._id && styles.buttonDisabled,
+                ]}
+                onPress={() => deleteTask(task._id)}
+                disabled={deleteLoading === task._id}
+              >
+                <Text style={styles.buttonText}>
+                  {deleteLoading === task._id
+                    ? 'Deleting...'
+                    : 'Delete'}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+
+      {/* Modal */}
+      <Modal visible={isModalOpen} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>
@@ -301,92 +307,99 @@ export default function RoutineScreen() {
               style={styles.input}
               placeholder="Task title"
               value={newTask.title}
-              onChangeText={(text) =>
-                setNewTask({ ...newTask, title: text })
+              onChangeText={(t) =>
+                setNewTask({ ...newTask, title: t })
               }
-              placeholderTextColor="#999"
             />
 
             <TextInput
               style={styles.input}
               placeholder="Duration (minutes)"
-              value={newTask.defaultDuration}
-              onChangeText={(text) =>
-                setNewTask({ ...newTask, defaultDuration: text })
-              }
               keyboardType="numeric"
-              placeholderTextColor="#999"
+              value={newTask.defaultDuration}
+              onChangeText={(t) =>
+                setNewTask({ ...newTask, defaultDuration: t })
+              }
             />
 
-            <View style={styles.frequencySelector}>
-              <Text style={styles.selectorLabel}>Frequency:</Text>
-              <View style={styles.frequencyOptions}>
-                {frequencies.map((freq) => (
-                  <Pressable
-                    key={freq}
+            {/* Frequency */}
+            <View style={styles.frequencyOptions}>
+              {frequencies.map((f) => (
+                <Pressable
+                  key={f}
+                  style={[
+                    styles.frequencyButton,
+                    newTask.frequency === f &&
+                      styles.frequencyButtonActive,
+                  ]}
+                  onPress={() =>
+                    setNewTask({ ...newTask, frequency: f })
+                  }
+                >
+                  <Text
                     style={[
-                      styles.frequencyButton,
-                      newTask.frequency === freq && styles.frequencyButtonActive,
+                      styles.frequencyButtonText,
+                      newTask.frequency === f &&
+                        styles.frequencyButtonTextActive,
                     ]}
-                    onPress={() =>
-                      setNewTask({ ...newTask, frequency: freq })
-                    }
+                  >
+                    {f}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            {/* Days */}
+            {newTask.frequency === 'fixed' && (
+              <View style={styles.daysGrid}>
+                {daysOfWeekOptions.map((d) => (
+                  <Pressable
+                    key={d.value}
+                    style={[
+                      styles.dayButton,
+                      newTask.daysOfWeek.includes(d.value) &&
+                        styles.dayButtonActive,
+                    ]}
+                    onPress={() => toggleDay(d.value)}
                   >
                     <Text
                       style={[
-                        styles.frequencyButtonText,
-                        newTask.frequency === freq &&
-                          styles.frequencyButtonTextActive,
+                        styles.dayButtonText,
+                        newTask.daysOfWeek.includes(d.value) &&
+                          styles.dayButtonTextActive,
                       ]}
                     >
-                      {freq.charAt(0).toUpperCase() + freq.slice(1)}
+                      {d.label}
                     </Text>
                   </Pressable>
                 ))}
               </View>
-            </View>
+            )}
 
-            {newTask.frequency === 'fixed' && (
-              <View style={styles.daysSelector}>
-                <Text style={styles.selectorLabel}>Select Days:</Text>
-                <View style={styles.daysGrid}>
-                  {daysOfWeekOptions.map((day) => (
-                    <Pressable
-                      key={day}
-                      style={[
-                        styles.dayButton,
-                        newTask.daysOfWeek.includes(day) &&
-                          styles.dayButtonActive,
-                      ]}
-                      onPress={() => toggleDaySelection(day)}
-                    >
-                      <Text
-                        style={[
-                          styles.dayButtonText,
-                          newTask.daysOfWeek.includes(day) &&
-                            styles.dayButtonTextActive,
-                        ]}
-                      >
-                        {day.slice(0, 3)}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
+            {/* Times per week */}
+            {newTask.frequency === 'flexible' && (
+              <TextInput
+                style={styles.input}
+                placeholder="Times per week"
+                keyboardType="numeric"
+                value={newTask.timesPerWeek}
+                onChangeText={(t) =>
+                  setNewTask({ ...newTask, timesPerWeek: t })
+                }
+              />
             )}
 
             <View style={styles.modalButtons}>
-              <Pressable
-                style={styles.cancelButton}
-                onPress={() => setIsModalOpen(false)}
-              >
-                <Text style={styles.buttonText}>Cancel</Text>
+              <Pressable style={styles.cancelButton} onPress={closeModal}>
+                <Text>Cancel</Text>
               </Pressable>
               <Pressable
                 style={styles.confirmButton}
-                onPress={selectedTask ? handleUpdateTask : handleAddTask}
+                onPress={
+                  selectedTask ? handleUpdateTask : handleAddTask
+                }
               >
-                <Text style={styles.buttonText}>
+                <Text style={{ color: '#fff' }}>
                   {selectedTask ? 'Update' : 'Add'}
                 </Text>
               </Pressable>
@@ -398,226 +411,114 @@ export default function RoutineScreen() {
   );
 }
 
+/* ---------------- STYLES (unchanged UI) ---------------- */
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f3f4f6',
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 12,
-    color: '#666',
-  },
+  container: { flex: 1, backgroundColor: '#f3f4f6' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 10, color: '#666' },
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    padding: 16,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    flex: 1,
-  },
+  title: { fontSize: 22, fontWeight: '700' },
   addButton: {
     backgroundColor: '#16a34a',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    padding: 10,
     borderRadius: 8,
   },
-  addButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 13,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyStateText: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 4,
-  },
-  emptyStateSubtext: {
-    fontSize: 12,
-    color: '#999',
-    fontStyle: 'italic',
-  },
-  tasksList: {
-    flex: 1,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
+  addButtonText: { color: '#fff', fontWeight: '600' },
+
+  tasksList: { paddingHorizontal: 16 },
   taskCard: {
     backgroundColor: '#fff',
-    borderRadius: 8,
     padding: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  taskInfo: {
+    borderRadius: 8,
     marginBottom: 12,
   },
-  taskTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: 4,
-  },
-  taskDetail: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 2,
-  },
-  taskActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
+  taskTitle: { fontWeight: '700', fontSize: 16 },
+  taskDetail: { fontSize: 12, color: '#666' },
+
+  taskActions: { flexDirection: 'row', gap: 8, marginTop: 8 },
   updateButton: {
     flex: 1,
     backgroundColor: '#eab308',
-    paddingVertical: 8,
+    padding: 8,
     borderRadius: 6,
-    justifyContent: 'center',
     alignItems: 'center',
   },
   deleteButton: {
     flex: 1,
     backgroundColor: '#dc2626',
-    paddingVertical: 8,
+    padding: 8,
     borderRadius: 6,
-    justifyContent: 'center',
     alignItems: 'center',
   },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 12,
-  },
+  buttonDisabled: { opacity: 0.6 },
+  buttonText: { color: '#fff', fontWeight: '600' },
+
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: '#fff',
+    padding: 20,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 24,
-    paddingBottom: 40,
-    maxHeight: '90%',
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 16,
-    color: '#1f2937',
-  },
+  modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
+
   input: {
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: '#ddd',
     borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    padding: 10,
     marginBottom: 12,
-    fontSize: 14,
-    color: '#1f2937',
   },
-  frequencySelector: {
-    marginBottom: 16,
-  },
-  selectorLabel: {
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 8,
-  },
-  frequencyOptions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
+
+  frequencyOptions: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   frequencyButton: {
     flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#d1d5db',
     borderRadius: 6,
-    justifyContent: 'center',
+    padding: 8,
     alignItems: 'center',
   },
   frequencyButtonActive: {
     backgroundColor: '#3b82f6',
     borderColor: '#3b82f6',
   },
-  frequencyButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6b7280',
-  },
-  frequencyButtonTextActive: {
-    color: '#fff',
-  },
-  daysSelector: {
-    marginBottom: 16,
-  },
-  daysGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
+  frequencyButtonText: { fontSize: 12 },
+  frequencyButtonTextActive: { color: '#fff' },
+
+  daysGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   dayButton: {
     width: '30%',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#d1d5db',
     borderRadius: 6,
-    justifyContent: 'center',
+    padding: 8,
     alignItems: 'center',
   },
-  dayButtonActive: {
-    backgroundColor: '#3b82f6',
-    borderColor: '#3b82f6',
-  },
-  dayButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6b7280',
-  },
-  dayButtonTextActive: {
-    color: '#fff',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 20,
-  },
+  dayButtonActive: { backgroundColor: '#3b82f6' },
+  dayButtonText: { fontSize: 12 },
+  dayButtonTextActive: { color: '#fff' },
+
+  modalButtons: { flexDirection: 'row', gap: 12, marginTop: 16 },
   cancelButton: {
     flex: 1,
-    paddingVertical: 12,
+    padding: 12,
     backgroundColor: '#e5e7eb',
-    borderRadius: 8,
-    justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 8,
   },
   confirmButton: {
     flex: 1,
-    paddingVertical: 12,
+    padding: 12,
     backgroundColor: '#3b82f6',
-    borderRadius: 8,
-    justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 8,
   },
 });
