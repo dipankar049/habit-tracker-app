@@ -9,7 +9,7 @@ export default function Menubar({ isOpen, closeSidebar, navigation }) {
     { icon: '📋', label: 'Set Routine', screen: 'Routine' },
     { icon: '📅', label: 'Calendar', screen: 'Calendar' },
     { icon: '📊', label: 'Weekly Summary', screen: 'WeeklySummary' },
-    { icon: '📈', label: 'Summary', screen: 'Summary' },
+    // { icon: '📈', label: 'Summary', screen: 'Summary' },
     { icon: '💬', label: 'Contact Us', screen: 'Contact' },
     { icon: '🚪', label: 'Logout', screen: null, isLogout: true },
   ];
