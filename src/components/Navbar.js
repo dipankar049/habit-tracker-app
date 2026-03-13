@@ -1,39 +1,85 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { useAuth } from '../auth/AuthContext';
-import { useNavigation } from '@react-navigation/native';
+import { View, Text, Pressable, StyleSheet, Image } from "react-native";
+import { useAuth } from "../auth/AuthContext";
+import { useNavigation } from "@react-navigation/native";
+import { LogIn, UserPlus, Menu } from "lucide-react-native";
 
 export default function Navbar({ toggleSidebar }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigation = useNavigation();
 
   return (
     <View style={styles.navbar}>
-      {/* Hamburger Menu */}
-      <Pressable onPress={toggleSidebar} style={styles.hamburgerContainer}>
-        <Text style={styles.hamburger}>☰</Text>
-      </Pressable>
+      
+      {/* Left - menu + logo */}
+      <View style={styles.left}>
+        {user && (
+          <Pressable onPress={toggleSidebar} style={styles.menuBtn}>
+            <Menu size={22} color="#374151" />
+          </Pressable>
+        )}
 
-      {/* Logo */}
-      <View style={styles.logoContainer}>
-        <Text style={styles.logo}>
-          <Text style={styles.habitText}>Habit</Text>
-          <Text style={styles.trackerText}>Tracker</Text>
-        </Text>
+        <Pressable
+          style={styles.logoContainer}
+          // onPress={() => {
+          //   if (user) {
+          //     navigation.navigate("HomeLayout", { screen: "Home" });
+          //   } else {
+          //     navigation.navigate("LandingScreen");
+          //   }
+          // }}
+        >
+          <Image
+            source={require("../../assets/habitTracker.png")}
+            style={styles.logoImage}
+          />
+
+          <Text style={styles.logoText}>HabitTracker</Text>
+        </Pressable>
       </View>
 
-      {/* User Profile Button */}
-      {user && (
-        <Pressable 
-          // onPress={() => navigation.navigate('Profile')}
-          onPress={() => navigation.navigate('HomeLayout', {
-            screen: "Profile",
-          })}
-          style={styles.profileButton}
-        >
-          <Text style={styles.profileInitial}>
-            {user.username?.slice(0, 1).toUpperCase()}
-          </Text>
-        </Pressable>
+      {/* Right - auth controls */}
+      {user ? (
+        <View style={styles.right}>
+          {/* <Pressable
+            style={styles.logoutBtn}
+            onPress={() => {
+              logout();
+              navigation.navigate("Login");
+            }}
+          >
+            <LogOut size={18} color="#374151" strokeWidth={2} />
+            <Text style={styles.logoutText}>Logout</Text>
+          </Pressable> */}
+
+          <Pressable
+            style={styles.profileButton}
+            onPress={() =>
+              navigation.navigate("HomeLayout", { screen: "Profile" })
+            }
+          >
+            <Text style={styles.profileInitial}>
+              {user.username?.slice(0, 1).toUpperCase()}
+            </Text>
+          </Pressable>
+        </View>
+      ) : (
+        <View style={styles.right}>
+          <Pressable
+            style={styles.loginBtn}
+            onPress={() => navigation.navigate("Login")}
+          >
+            <LogIn size={16} color="#374151" />
+            <Text style={styles.loginText}>Login</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.registerBtn}
+            onPress={() => navigation.navigate("Register")}
+          >
+            <UserPlus size={16} color="#fff" />
+            <Text style={styles.registerText}>Register</Text>
+          </Pressable>
+        </View>
       )}
     </View>
   );
@@ -41,55 +87,97 @@ export default function Navbar({ toggleSidebar }) {
 
 const styles = StyleSheet.create({
   navbar: {
-    height: 48,
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    height: 56,
+    backgroundColor: "#ffffff",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 5,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: "#e5e7eb",
   },
-  hamburgerContainer: {
-    padding: 8,
+
+  left: {
+    flexDirection: "row",
+    alignItems: "center",
   },
-  hamburger: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
+
+  menuBtn: {
+    marginRight: 10,
   },
+
   logoContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
-  logo: {
-    fontSize: 20,
-    fontWeight: '700',
+
+  logoImage: {
+    width: 24,
+    height: 24,
+    resizeMode: "contain",
   },
-  habitText: {
-    color: '#3b82f6',
+
+  logoText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111827",
   },
-  trackerText: {
-    color: '#1f2937',
+
+  right: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
+
+  loginBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+
+  loginText: {
+    color: "#374151",
+    fontWeight: "600",
+  },
+
+  registerBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#7c3aed",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+
+  registerText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+
+  logoutBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+
+  logoutText: {
+    color: "#374151",
+    fontWeight: "600",
+  },
+
   profileButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#3b82f6',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#7c3aed",
+    justifyContent: "center",
+    alignItems: "center",
   },
+
   profileInitial: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-    textAlign: 'center',
+    color: "#fff",
+    fontWeight: "700",
   },
 });

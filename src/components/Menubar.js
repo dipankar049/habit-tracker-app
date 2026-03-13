@@ -1,17 +1,26 @@
 import { View, Text, Pressable, StyleSheet, ScrollView, Modal } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
+import {
+  Home,
+  ClipboardList,
+  Calendar,
+  BarChart3,
+  MessageCircle,
+  ChartPie,
+  LogOut,
+} from "lucide-react-native";
 
 export default function Menubar({ isOpen, closeSidebar, navigation }) {
   const { logout } = useAuth();
 
   const menuItems = [
-    { icon: '🏠', label: 'Home', screen: 'Home' },
-    { icon: '📋', label: 'Set Routine', screen: 'Routine' },
-    { icon: '📅', label: 'Calendar', screen: 'Calendar' },
-    { icon: '📊', label: 'Weekly Summary', screen: 'WeeklySummary' },
-    // { icon: '📈', label: 'Summary', screen: 'Summary' },
-    { icon: '💬', label: 'Contact Us', screen: 'Contact' },
-    { icon: '🚪', label: 'Logout', screen: null, isLogout: true },
+    { icon: Home, label: "Home", screen: "Home" },
+    { icon: ClipboardList, label: "Set Routine", screen: "Routine" },
+    { icon: Calendar, label: "Calendar", screen: "Calendar" },
+    { icon: BarChart3, label: "Weekly Summary", screen: "WeeklySummary" },
+    // { icon: ChartPie, label: 'Summary', screen: 'Summary' },
+    { icon: MessageCircle, label: "Contact Us", screen: "Contact" },
+    // { icon: LogOut, label: "Logout", screen: null, isLogout: true },
   ];
 
   const handleMenuPress = (screen, isLogout) => {
@@ -42,8 +51,10 @@ export default function Menubar({ isOpen, closeSidebar, navigation }) {
       {/* Sidebar Content */}
       <View style={styles.sidebar}>
         <ScrollView style={styles.menuContainer}>
-          {menuItems.map((item, index) => (
-            <View key={index}>
+          {menuItems.map((item, index) => {
+            const Icon = item.icon;
+
+            return <View key={index}>
               <Pressable
                 style={({ pressed }) => [
                   styles.menuItem,
@@ -52,7 +63,8 @@ export default function Menubar({ isOpen, closeSidebar, navigation }) {
                 ]}
                 onPress={() => handleMenuPress(item.screen, item.isLogout)}
               >
-                <Text style={styles.menuIcon}>{item.icon}</Text>
+                <Icon size={20} color={item.isLogout ? "#dc2626" : "#374151"} />
+
                 <Text
                   style={[
                     styles.menuLabel,
@@ -64,7 +76,7 @@ export default function Menubar({ isOpen, closeSidebar, navigation }) {
               </Pressable>
               <View style={styles.divider} />
             </View>
-          ))}
+          })}
         </ScrollView>
       </View>
     </Modal>
@@ -72,55 +84,65 @@ export default function Menubar({ isOpen, closeSidebar, navigation }) {
 }
 
 const styles = StyleSheet.create({
+
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: "rgba(0,0,0,0.45)",
   },
+
   sidebar: {
-    width: '80%',
-    backgroundColor: '#fff',
-    height: '100%',
-    shadowColor: '#000',
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: "75%",
+    backgroundColor: "#ffffff",
+    borderTopRightRadius: 6,
+    borderBottomRightRadius: 6,
+    shadowColor: "#000",
     shadowOffset: { width: 2, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 5,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 10,
   },
+
   menuContainer: {
-    paddingTop: 8,
-    paddingHorizontal: 12,
+    paddingTop: 24,
+    paddingHorizontal: 14,
   },
+
   menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginVertical: 4,
-    borderRadius: 8,
-    gap: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    gap: 14,
   },
+
   menuItemPressed: {
-    backgroundColor: '#f0f9ff',
+    backgroundColor: "#f1f5f9",
   },
-  menuIcon: {
-    fontSize: 20,
-  },
+
   menuLabel: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#1f2937',
+    fontWeight: "500",
+    color: "#1f2937",
   },
+
   logoutItem: {
-    marginTop: 16,
+    marginTop: 20,
   },
+
   logoutText: {
-    color: '#dc2626',
-    fontWeight: '600',
+    color: "#dc2626",
+    fontWeight: "600",
   },
+
   divider: {
     height: 1,
-    backgroundColor: '#e5e7eb',
-    marginHorizontal: 8,
-    marginVertical: 4,
+    backgroundColor: "#f1f5f9",
+    marginVertical: 6,
   },
+
 });

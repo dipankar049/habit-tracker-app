@@ -7,32 +7,39 @@ import {
   Pressable,
   Linking,
 } from 'react-native';
+import {
+  Mail,
+  Github,
+  Linkedin,
+  Twitter,
+  ArrowRight
+} from "lucide-react-native";
 
 export default function ContactScreen() {
   const contactLinks = [
     {
-      icon: '📧',
-      label: 'Email',
-      href: 'mailto:dipb7266@gmail.com',
-      color: '#dc2626',
+      icon: Mail,
+      label: "Email",
+      href: "mailto:dipb7266@gmail.com",
+      color: "#ef4444",
     },
     {
-      icon: '🐙',
-      label: 'GitHub',
-      href: 'https://github.com/dipankar049',
-      color: '#1f2937',
+      icon: Github,
+      label: "GitHub",
+      href: "https://github.com/dipankar049",
+      color: "#111827",
     },
     {
-      icon: '💼',
-      label: 'LinkedIn',
-      href: 'https://linkedin.com/in/dipankar049',
-      color: '#0ea5e9',
+      icon: Linkedin,
+      label: "LinkedIn",
+      href: "https://linkedin.com/in/dipankar049",
+      color: "#0ea5e9",
     },
     {
-      icon: '𝕏',
-      label: 'Twitter',
-      href: 'https://twitter.com',
-      color: '#0f172a',
+      icon: Twitter,
+      label: "Twitter",
+      href: "https://twitter.com",
+      color: "#0f172a",
     },
   ];
 
@@ -69,8 +76,10 @@ export default function ContactScreen() {
 
       {/* Contact Links */}
       <View style={styles.linksContainer}>
-        {contactLinks.map((link, idx) => (
-          <Pressable
+        {contactLinks.map((link, idx) => {
+          const Icon = link.icon;
+
+          return <Pressable
             key={idx}
             style={({ pressed }) => [
               styles.contactLink,
@@ -78,16 +87,18 @@ export default function ContactScreen() {
             ]}
             onPress={() => handlePress(link.href)}
           >
-            <Text style={styles.linkIcon}>{link.icon}</Text>
+            <View style={[styles.iconWrapper, { backgroundColor: `${link.color}15` }]}>
+              <Icon size={20} color={link.color} />
+            </View>
             <View style={styles.linkContent}>
               <Text style={styles.linkLabel}>{link.label}</Text>
               <Text style={styles.linkDescription} numberOfLines={1}>
                 {link.href.replace('mailto:', '').replace('https://', '')}
               </Text>
             </View>
-            <Text style={styles.linkArrow}>→</Text>
+            <ArrowRight size={18} color="#9ca3af" />
           </Pressable>
-        ))}
+        })}
       </View>
 
       {/* Info Section */}
@@ -104,102 +115,117 @@ export default function ContactScreen() {
 }
 
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: "#f8fafc",
   },
+
   contentContainer: {
     paddingHorizontal: 16,
-    paddingVertical: 20,
+    paddingTop: 20,
   },
+
   headerCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingVertical: 24,
-    paddingHorizontal: 16,
-    marginBottom: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    paddingVertical: 26,
+    paddingHorizontal: 20,
+    marginBottom: 24,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     elevation: 3,
   },
+
   title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: 8,
+    fontSize: 26,
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: 6,
   },
+
   subtitle: {
     fontSize: 14,
-    color: '#6b7280',
-    textAlign: 'center',
+    color: "#6b7280",
+    textAlign: "center",
     lineHeight: 20,
   },
+
   linksContainer: {
-    gap: 12,
-    marginBottom: 20,
+    gap: 14,
+    marginBottom: 24,
   },
+
   contactLink: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
     elevation: 2,
   },
+
   contactLinkPressed: {
-    backgroundColor: '#f0f9ff',
-    transform: [{ scale: 0.98 }],
+    transform: [{ scale: 0.97 }],
+    opacity: 0.9,
   },
-  linkIcon: {
-    fontSize: 24,
+
+  iconWrapper: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
   },
+
   linkContent: {
     flex: 1,
   },
+
   linkLabel: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#1f2937',
+    fontWeight: "600",
+    color: "#111827",
     marginBottom: 2,
   },
+
   linkDescription: {
     fontSize: 12,
-    color: '#9ca3af',
+    color: "#9ca3af",
   },
-  linkArrow: {
-    fontSize: 18,
-    color: '#3b82f6',
-    fontWeight: '600',
-  },
+
   infoCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowRadius: 6,
     elevation: 2,
   },
+
   infoTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: 8,
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: 6,
   },
+
   infoText: {
     fontSize: 13,
-    color: '#6b7280',
+    color: "#6b7280",
     lineHeight: 20,
   },
+
 });

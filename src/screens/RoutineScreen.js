@@ -247,52 +247,21 @@ export default function RoutineScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {tasks.map((task) => (
-          <View key={task._id} style={styles.taskCard}>
-            <Text style={styles.taskTitle}>{task.title}</Text>
-            <Text style={styles.taskDetail}>
-              Duration: {task.defaultDuration} min
-            </Text>
-            <Text style={styles.taskDetail}>
-              Frequency: {task.frequency}
-            </Text>
-            {task.frequency === 'fixed' && (
-              <Text style={styles.taskDetail}>
-                Days:{' '}
-                {task.daysOfWeek
-                  .map(
-                    (d) =>
-                      daysOfWeekOptions.find((opt) => opt.value === d)?.label
-                  )
-                  .join(', ')}
-              </Text>
-            )}
-
-            <View style={styles.taskActions}>
-              <Pressable
-                style={styles.updateButton}
-                onPress={() => openUpdateModal(task)}
-              >
-                <Text style={styles.buttonText}>Update</Text>
-              </Pressable>
-
-              <Pressable
-                style={[
-                  styles.deleteButton,
-                  deleteLoading === task._id && styles.buttonDisabled,
-                ]}
-                onPress={() => deleteTask(task._id)}
-                disabled={deleteLoading === task._id}
-              >
-                <Text style={styles.buttonText}>
-                  {deleteLoading === task._id
-                    ? 'Deleting...'
-                    : 'Delete'}
-                </Text>
-              </Pressable>
-            </View>
+        {tasks.length ? (
+          <View style={{ gap: 12 }}>
+            {tasks.map((task) => (
+              <TaskCard
+                key={task._id}
+                task={task}
+                deleteLoading={deleteLoading}
+                onUpdate={() => openUpdateModal(task)}
+                onDelete={() => deleteTask(task._id)}
+              />
+            ))}
           </View>
-        ))}
+        ) : (
+          <Text style={styles.emptyText}>No task found</Text>
+        )}
       </ScrollView>
 
       {/* Modal */}
@@ -330,7 +299,7 @@ export default function RoutineScreen() {
                   style={[
                     styles.frequencyButton,
                     newTask.frequency === f &&
-                      styles.frequencyButtonActive,
+                    styles.frequencyButtonActive,
                   ]}
                   onPress={() =>
                     setNewTask({ ...newTask, frequency: f })
@@ -340,7 +309,7 @@ export default function RoutineScreen() {
                     style={[
                       styles.frequencyButtonText,
                       newTask.frequency === f &&
-                        styles.frequencyButtonTextActive,
+                      styles.frequencyButtonTextActive,
                     ]}
                   >
                     {f}
@@ -358,7 +327,7 @@ export default function RoutineScreen() {
                     style={[
                       styles.dayButton,
                       newTask.daysOfWeek.includes(d.value) &&
-                        styles.dayButtonActive,
+                      styles.dayButtonActive,
                     ]}
                     onPress={() => toggleDay(d.value)}
                   >
@@ -366,7 +335,7 @@ export default function RoutineScreen() {
                       style={[
                         styles.dayButtonText,
                         newTask.daysOfWeek.includes(d.value) &&
-                          styles.dayButtonTextActive,
+                        styles.dayButtonTextActive,
                       ]}
                     >
                       {d.label}
@@ -411,24 +380,106 @@ export default function RoutineScreen() {
   );
 }
 
-/* ---------------- STYLES (unchanged UI) ---------------- */
+function TaskCard({ task, onDelete, onUpdate, deleteLoading }) {
+
+  const dayMap = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  const formattedDays =
+    task.frequency === "fixed"
+      ? task.daysOfWeek
+        .sort((a, b) => a - b)
+        .map((day) => dayMap[day])
+      : [];
+
+  return (
+    <View style={styles.card}>
+
+      {/* LEFT */}
+      <View style={{ flex: 1 }}>
+
+        <Text style={styles.cardTitle}>
+          {task.title}
+        </Text>
+
+        <View style={styles.metaRow}>
+          <Text style={styles.metaText}>
+            ⏱ {task.defaultDuration} min
+          </Text>
+
+          <Text style={styles.metaText}>
+            {task.frequency === "fixed" && "Fixed Schedule"}
+            {task.frequency === "flexible" && `Flexible • ${task.timesPerWeek}x/week`}
+            {task.frequency === "alternate" && "Alternate Days"}
+          </Text>
+        </View>
+
+        {task.frequency === "fixed" && (
+          <View style={styles.daysRow}>
+            {formattedDays.map((day, index) => (
+              <View key={index} style={styles.dayBadge}>
+                <Text style={styles.dayText}>{day}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+      </View>
+
+      {/* BUTTONS */}
+      <View style={styles.cardButtons}>
+
+        <Pressable
+          style={styles.updateBtn}
+          onPress={onUpdate}
+        >
+          <Text style={styles.btnText}>Update</Text>
+        </Pressable>
+
+        <Pressable
+          style={styles.deleteBtn}
+          onPress={onDelete}
+          disabled={deleteLoading === task._id}
+        >
+          <Text style={styles.btnText}>
+            {deleteLoading === task._id ? "Deleting..." : "Delete"}
+          </Text>
+        </Pressable>
+
+      </View>
+
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f3f4f6' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { marginTop: 10, color: '#666' },
 
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16
   },
-  title: { fontSize: 22, fontWeight: '700' },
+
+  title: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#1f2937"
+  },
+
   addButton: {
-    backgroundColor: '#16a34a',
-    padding: 10,
-    borderRadius: 8,
+    backgroundColor: "#7c3aed",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10
   },
-  addButtonText: { color: '#fff', fontWeight: '600' },
+
+  addButtonText: {
+    color: "#fff",
+    fontWeight: "600"
+  },
 
   tasksList: { paddingHorizontal: 16 },
   taskCard: {
@@ -521,4 +572,81 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 8,
   },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#f1f5f9",
+  },
+
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1f2937"
+  },
+
+  metaRow: {
+    flexDirection: "row",
+    gap: 14,
+    marginTop: 4
+  },
+
+  metaText: {
+    fontSize: 13,
+    color: "#6b7280"
+  },
+
+  daysRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 8,
+    gap: 6
+  },
+
+  dayBadge: {
+    backgroundColor: "#ede9fe",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999
+  },
+
+  dayText: {
+    fontSize: 11,
+    color: "#7c3aed",
+    fontWeight: "600"
+  },
+
+  cardButtons: {
+    flexDirection: "row",
+    gap: 14,
+    marginTop: 8
+  },
+
+  updateBtn: {
+    flex: 1,
+    backgroundColor: "#f59e0b",
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignItems: "center"
+  },
+
+  deleteBtn: {
+    flex: 1,
+    backgroundColor: "#ef4444",
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: "center"
+  },
+
+  btnText: {
+    color: "#fff",
+    fontWeight: "600"
+  },
+
+  emptyText: {
+    textAlign: "center",
+    marginTop: 40,
+    color: "#6b7280"
+  }
 });

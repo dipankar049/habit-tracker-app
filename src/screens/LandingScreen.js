@@ -7,10 +7,18 @@ import {
     Pressable
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { Feather } from '@expo/vector-icons';
+import {
+    Repeat,
+    CheckCircle,
+    BarChart2,
+    Calendar,
+    Edit3,
+    Layers
+} from "lucide-react-native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function LandingScreen() {
-
+    const insets = useSafeAreaInsets();
     const navigation = useNavigation();
 
     const habits = [
@@ -22,37 +30,37 @@ export default function LandingScreen() {
 
     const features = [
         {
-            icon: "repeat",
+            icon: Repeat,
             color: "#8b5cf6",
             title: "Smart Routine System",
             desc: "Create habits with custom duration goals."
         },
         {
-            icon: "check-circle",
+            icon: CheckCircle,
             color: "#22c55e",
             title: "Daily Task Tracking",
             desc: "Mark tasks complete and log time spent."
         },
         {
-            icon: "bar-chart-2",
+            icon: BarChart2,
             color: "#3b82f6",
             title: "Weekly Analytics",
             desc: "Understand how much time you invest."
         },
         {
-            icon: "calendar",
+            icon: Calendar,
             color: "#f59e0b",
             title: "GitHub-style Heatmap",
             desc: "Visualize your consistency."
         },
         {
-            icon: "edit-3",
+            icon: Edit3,
             color: "#ef4444",
             title: "Edit Anytime",
             desc: "Update your routines anytime."
         },
         {
-            icon: "layers",
+            icon: Layers,
             color: "#14b8a6",
             title: "Clean Interface",
             desc: "Focused UI for deep work."
@@ -60,7 +68,14 @@ export default function LandingScreen() {
     ];
 
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView
+            style={styles.container}
+            contentContainerStyle={{
+                paddingTop: insets.top,
+                paddingBottom: 40,
+            }}
+            showsVerticalScrollIndicator={false}
+        >
 
             {/* HERO */}
             <View style={styles.hero}>
@@ -83,11 +98,17 @@ export default function LandingScreen() {
                     >
                         <Text style={styles.primaryBtnText}>Get Started →</Text>
                     </Pressable>
-
-                    <Pressable style={styles.secondaryBtn}>
-                        <Text style={styles.secondaryBtnText}>How it works</Text>
-                    </Pressable>
                 </View>
+
+                <Text style={styles.loginTextBelow}>
+                    Already have an account?{" "}
+                    <Text
+                        style={styles.loginLink}
+                        onPress={() => navigation.navigate("Login")}
+                    >
+                        Login
+                    </Text>
+                </Text>
             </View>
 
             {/* PREVIEW CARD */}
@@ -131,19 +152,20 @@ export default function LandingScreen() {
 
                 <Text style={styles.sectionTitle}>Features</Text>
 
-                {features.map((f, i) => (
-                    <View key={i} style={styles.featureCard}>
+                {features.map((f, i) => {
+                    const Icon = f.icon;
 
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Feather name={f.icon} size={22} color={f.color} />
-                            <Text style={styles.featureTitle}>{f.title}</Text>
+                    return (
+                        <View key={i} style={styles.featureCard}>
+                            <View style={{ flexDirection: "row", alignItems: "center" }}>
+                                <Icon size={22} color={f.color} />
+                                <Text style={styles.featureTitle}>{f.title}</Text>
+                            </View>
+
+                            <Text style={styles.featureDesc}>{f.desc}</Text>
                         </View>
-
-
-                        <Text style={styles.featureDesc}>{f.desc}</Text>
-
-                    </View>
-                ))}
+                    );
+                })}
 
             </View>
 
@@ -333,7 +355,6 @@ const styles = StyleSheet.create({
 
     cta: {
         padding: 24,
-        paddingBottom: 60,
         alignItems: "center",
     },
 
@@ -343,6 +364,16 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         marginBottom: 20,
         textAlign: "center",
+    },
+
+    loginTextBelow: {
+        marginTop: 12,
+        color: "#6b7280",
+    },
+
+    loginLink: {
+        color: "#7c3aed",
+        fontWeight: "600",
     },
 
 });
