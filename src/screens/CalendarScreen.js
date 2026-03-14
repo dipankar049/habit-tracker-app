@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,30 +8,51 @@ import {
   ActivityIndicator,
   Modal,
   TextInput,
-  Alert,
-} from 'react-native';
-import { useAuth } from '../auth/AuthContext';
-import api from '../services/api';
+} from "react-native";
+import { Calendar } from "react-native-calendars";
+import { useAuth } from "../auth/AuthContext";
+import api from "../services/api";
+import { useToast } from "react-native-toast-notifications";
+import { Info, CheckCircle } from "lucide-react-native";
 
 export default function CalendarScreen() {
   const { token } = useAuth();
+  const toast = useToast();
+
+  const [helpModalOpen, setHelpModalOpen] = useState(false);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+
+  const [currentMonth, setCurrentMonth] = useState(
+    new Date().toISOString().slice(0, 7)
+  );
+
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [eventToDelete, setEventToDelete] = useState(null);
+  const [initialLoad, setInitialLoad] = useState(true);
+
   const [newEvent, setNewEvent] = useState({
-    title: '',
-    scheduledDate: new Date().toISOString().split('T')[0],
+    title: "",
+    scheduledDate: selectedDate,
   });
 
   const fetchEvents = async () => {
     if (!token) return;
+
     setLoading(true);
+
     try {
-      const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-      const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+      const startDate = new Date(`${currentMonth}-01`);
+      startDate.setDate(1);
+
+      const endDate = new Date(startDate);
+      endDate.setMonth(endDate.getMonth() + 1);
+      endDate.setDate(0);
 
       const res = await api.get(
         `/events?start=${startDate.toISOString()}&end=${endDate.toISOString()}`,
@@ -47,30 +68,31 @@ export default function CalendarScreen() {
         }))
       );
     } catch (error) {
-      console.error('Error fetching events:', error);
+      console.error("Error fetching events:", error);
     } finally {
+      if (initialLoad) {
+        setInitialLoad(false);
+      }
       setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchEvents();
-  }, [currentDate, token]);
+  }, [token, currentMonth]);
 
   const handleAddEvent = async () => {
     if (!newEvent.title.trim()) {
-      // Alert.alert('Error', 'Please enter event title');
-      toast.show('Please enter event title', {
-        type: 'danger',
-        duration: 3000,
-        placement: 'top',
+      toast.show("Please enter event title", {
+        type: "danger",
+        placement: "top",
       });
       return;
     }
 
     try {
       const res = await api.post(
-        '/events',
+        "/events",
         {
           title: newEvent.title,
           scheduledDate: new Date(newEvent.scheduledDate).toISOString(),
@@ -81,24 +103,23 @@ export default function CalendarScreen() {
       setEvents((prev) => [
         ...prev,
         {
-          id: res.data._id,
-          title: res.data.title,
-          scheduledDate: new Date(res.data.scheduledDate),
-          completed: res.data.completed,
+          id: res.data.addedEvent._id,
+          title: res.data.addedEvent.title,
+          scheduledDate: new Date(res.data.addedEvent.scheduledDate),
+          completed: res.data.addedEvent.completed,
         },
       ]);
 
       setAddModalOpen(false);
+
       setNewEvent({
-        title: '',
-        scheduledDate: new Date().toISOString().split('T')[0],
+        title: "",
+        scheduledDate: selectedDate,
       });
     } catch (error) {
-      // Alert.alert('Error', error.response?.data?.message || 'Failed to add event');
-      toast.show((error.response?.data?.message || 'Failed to add event'), {
-        type: 'danger',
-        duration: 3000,
-        placement: 'top',
+      toast.show(error.response?.data?.message || "Failed to add event", {
+        type: "danger",
+        placement: "top",
       });
     }
   };
@@ -106,88 +127,73 @@ export default function CalendarScreen() {
   const toggleCompletion = async (event) => {
     try {
       await api.put(
-        '/events',
+        "/events",
         { eventId: event.id, completed: !event.completed },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setEvents((prevEvents) =>
-        prevEvents.map((ev) =>
+      setEvents((prev) =>
+        prev.map((ev) =>
           ev.id === event.id ? { ...ev, completed: !ev.completed } : ev
         )
       );
     } catch (error) {
-      // Alert.alert('Error', 'Failed to update event');
-      toast.show((error.response?.data?.message || 'Failed to update event'), {
-        type: 'danger',
-        duration: 3000,
-        placement: 'top',
+      toast.show("Failed to update event", {
+        type: "danger",
+        placement: "top",
       });
     }
   };
 
   const deleteEvent = async () => {
     if (!eventToDelete) return;
+
     try {
       await api.delete(`/events/${eventToDelete.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setEvents((prevEvents) => prevEvents.filter((ev) => ev.id !== eventToDelete.id));
+
+      setEvents((prev) =>
+        prev.filter((ev) => ev.id !== eventToDelete.id)
+      );
+
       setDeleteModalOpen(false);
       setEventToDelete(null);
     } catch (error) {
-      // Alert.alert('Error', 'Failed to delete event');
-      toast.show('Failed to delete event', {
-        type: 'danger',
-        duration: 3000,
-        placement: 'top',
+      toast.show("Failed to delete event", {
+        type: "danger",
+        placement: "top",
       });
     }
   };
 
-  const getDaysInMonth = (date) => {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  };
+  const getMarkedDates = () => {
+    const marked = {};
 
-  const getFirstDayOfMonth = (date) => {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-  };
+    events.forEach((event) => {
+      const date = event.scheduledDate.toISOString().split("T")[0];
 
-  const handlePrevMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
-  };
-
-  const handleNextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
-  };
-
-  const monthName = currentDate.toLocaleString('default', { month: 'long' });
-  const year = currentDate.getFullYear();
-  const daysInMonth = getDaysInMonth(currentDate);
-  const firstDay = getFirstDayOfMonth(currentDate);
-
-  const days = [];
-  for (let i = 0; i < firstDay; i++) {
-    days.push(null);
-  }
-  for (let i = 1; i <= daysInMonth; i++) {
-    days.push(i);
-  }
-
-  const getEventsForDay = (day) => {
-    return events.filter((event) => {
-      const eventDay = event.scheduledDate.getDate();
-      const eventMonth = event.scheduledDate.getMonth();
-      const eventYear = event.scheduledDate.getFullYear();
-      return (
-        eventDay === day &&
-        eventMonth === currentDate.getMonth() &&
-        eventYear === currentDate.getFullYear()
-      );
+      marked[date] = {
+        marked: true,
+        dotColor: event.completed ? "green" : "red",
+      };
     });
+
+    marked[selectedDate] = {
+      ...(marked[selectedDate] || {}),
+      selected: true,
+      selectedColor: "#3b82f6",
+    };
+
+    return marked;
   };
 
-  if (loading) {
+  const selectedDayEvents = events.filter(
+    (event) =>
+      event.scheduledDate.toISOString().split("T")[0] === selectedDate
+  );
+
+  if (initialLoad && loading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" />
@@ -198,23 +204,36 @@ export default function CalendarScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>📅 Calendar</Text>
-      <Text style={styles.subtitle}>Schedule your important events</Text>
+      <Text style={styles.title}>Calendar</Text>
+      <View style={styles.subtitleRow}>
+        <Text style={styles.subtitle}>Schedule your important events</Text>
 
-      {/* Month Navigation */}
-      <View style={styles.monthNav}>
-        <Pressable onPress={handlePrevMonth} style={styles.navButton}>
-          <Text style={styles.navButtonText}>❮ Prev</Text>
-        </Pressable>
-        <Text style={styles.monthYear}>
-          {monthName} {year}
-        </Text>
-        <Pressable onPress={handleNextMonth} style={styles.navButton}>
-          <Text style={styles.navButtonText}>Next ❯</Text>
+        <Pressable onPress={() => setHelpModalOpen(true)}>
+          <Info size={17} color="#3b82f6" />
         </Pressable>
       </View>
+      {!initialLoad && loading && (
+        <ActivityIndicator style={{ marginVertical: 10 }} />
+      )}
+      <Calendar
+        onDayPress={(day) => {
+          setSelectedDate(day.dateString);
+          setNewEvent({
+            title: "",
+            scheduledDate: day.dateString,
+          });
+        }}
+        onMonthChange={(month) => {
+          const monthStr = `${month.year}-${String(month.month).padStart(2, "0")}`;
+          setCurrentMonth(monthStr);
+        }}
+        markedDates={getMarkedDates()}
+        theme={{
+          todayTextColor: "#3b82f6",
+          arrowColor: "#3b82f6",
+        }}
+      />
 
-      {/* Add Event Button */}
       <Pressable
         style={styles.addButton}
         onPress={() => setAddModalOpen(true)}
@@ -222,58 +241,32 @@ export default function CalendarScreen() {
         <Text style={styles.addButtonText}>+ Add Event</Text>
       </Pressable>
 
-      {/* Calendar Grid */}
-      <View style={styles.calendarGrid}>
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-          <View key={day} style={styles.dayHeader}>
-            <Text style={styles.dayHeaderText}>{day}</Text>
-          </View>
-        ))}
-
-        {days.map((day, index) => {
-          const dayEvents = day ? getEventsForDay(day) : [];
-          return (
-            <View
-              key={index}
-              style={[
-                styles.dayCell,
-                !day && styles.emptyCell,
-              ]}
-            >
-              {day && (
-                <>
-                  <Text style={styles.dayNumber}>{day}</Text>
-                  <View style={styles.eventsList}>
-                    {dayEvents.map((event) => (
-                      <Pressable
-                        key={event.id}
-                        onPress={() => toggleCompletion(event)}
-                        onLongPress={() => {
-                          setEventToDelete(event);
-                          setDeleteModalOpen(true);
-                        }}
-                        style={styles.eventTag}
-                      >
-                        <Text style={styles.eventTagText} numberOfLines={1}>
-                          {event.completed ? '✅ ' : ''}{event.title}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                </>
+      <View style={styles.eventsContainer}>
+        {selectedDayEvents.map((event) => (
+          <Pressable
+            key={event.id}
+            onPress={() => toggleCompletion(event)}
+            onLongPress={() => {
+              setEventToDelete(event);
+              setDeleteModalOpen(true);
+            }}
+            style={styles.eventTag}
+          >
+            <View style={styles.eventRow}>
+              {event.completed && (
+                <CheckCircle size={16} color="#22c55e" style={{ marginRight: 6 }} />
               )}
+
+              <Text style={styles.eventTagText}>
+                {event.title}
+              </Text>
             </View>
-          );
-        })}
+          </Pressable>
+        ))}
       </View>
 
       {/* Add Event Modal */}
-      <Modal
-        visible={addModalOpen}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setAddModalOpen(false)}
-      >
+      <Modal visible={addModalOpen} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Add Event</Text>
@@ -285,17 +278,6 @@ export default function CalendarScreen() {
               onChangeText={(text) =>
                 setNewEvent({ ...newEvent, title: text })
               }
-              placeholderTextColor="#999"
-            />
-
-            <TextInput
-              style={styles.input}
-              placeholder="Date (YYYY-MM-DD)"
-              value={newEvent.scheduledDate}
-              onChangeText={(text) =>
-                setNewEvent({ ...newEvent, scheduledDate: text })
-              }
-              placeholderTextColor="#999"
             />
 
             <View style={styles.modalButtons}>
@@ -305,6 +287,7 @@ export default function CalendarScreen() {
               >
                 <Text style={styles.buttonText}>Cancel</Text>
               </Pressable>
+
               <Pressable
                 style={styles.confirmButton}
                 onPress={handleAddEvent}
@@ -316,19 +299,11 @@ export default function CalendarScreen() {
         </View>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
-      <Modal
-        visible={deleteModalOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setDeleteModalOpen(false)}
-      >
+      {/* Delete Modal */}
+      <Modal visible={deleteModalOpen} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Delete Event?</Text>
-            <Text style={styles.modalMessage}>
-              Are you sure you want to delete "{eventToDelete?.title}"?
-            </Text>
 
             <View style={styles.modalButtons}>
               <Pressable
@@ -337,6 +312,7 @@ export default function CalendarScreen() {
               >
                 <Text style={styles.buttonText}>Cancel</Text>
               </Pressable>
+
               <Pressable
                 style={styles.deleteButton}
                 onPress={deleteEvent}
@@ -347,6 +323,37 @@ export default function CalendarScreen() {
           </View>
         </View>
       </Modal>
+
+      <Modal visible={helpModalOpen} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.helpModalContent}>
+            <Text style={styles.modalTitle}>How to use Calendar</Text>
+
+            <Text style={styles.helpText}>• Tap a date to view events.</Text>
+            <Text style={styles.helpText}>• Press "+ Add Event" to create an event for the selected date.</Text>
+            <Text style={styles.helpText}>• Tap an event to mark it completed.</Text>
+            <Text style={styles.helpText}>• Long press an event to delete it.</Text>
+            {/* <Text style={styles.helpText}>• 🔴 Red dot = Pending event.</Text>
+            <Text style={styles.helpText}>• 🟢 Green dot = Completed event.</Text> */}
+            <View style={styles.helpRow}>
+              <View style={[styles.statusDot, { backgroundColor: "#ef4444" }]} />
+              <Text style={styles.helpText}> ➟ Pending event</Text>
+            </View>
+
+            <View style={styles.helpRow}>
+              <View style={[styles.statusDot, { backgroundColor: "#22c55e" }]} />
+              <Text style={styles.helpText}> ➟ Completed event</Text>
+            </View>
+
+            <Pressable
+              style={styles.helpButton}
+              onPress={() => setHelpModalOpen(false)}
+            >
+              <Text style={styles.buttonText}>Got it</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -354,184 +361,167 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f3f4f6',
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    backgroundColor: "#f3f4f6",
+    padding: 16,
   },
+
   center: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
+
   loadingText: {
-    marginTop: 12,
-    color: '#666',
+    marginTop: 10,
   },
+
   title: {
     fontSize: 24,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 4,
+    fontWeight: "700",
+    textAlign: "center",
   },
+
   subtitle: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 16,
+    textAlign: "center",
+    color: "#666",
   },
-  monthNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+
+  addButton: {
+    backgroundColor: "#3b82f6",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 16,
   },
-  navButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#e5e7eb',
+
+  addButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+
+  eventsContainer: {
+    marginTop: 16,
+    gap: 8,
+  },
+
+  eventTag: {
+    backgroundColor: "#dbeafe",
+    padding: 10,
     borderRadius: 6,
   },
-  navButtonText: {
-    fontWeight: '600',
-    color: '#1f2937',
+
+  eventRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
-  monthYear: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1f2937',
-  },
-  addButton: {
-    backgroundColor: '#3b82f6',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  addButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  calendarGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  dayHeader: {
-    width: '14.28%',
-    paddingVertical: 12,
-    backgroundColor: '#f0f9ff',
-    borderBottomWidth: 1,
-    borderColor: '#e5e7eb',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  dayHeaderText: {
-    fontWeight: '600',
-    fontSize: 12,
-    color: '#3b82f6',
-  },
-  dayCell: {
-    width: '14.28%',
-    minHeight: 100,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    backgroundColor: '#fff',
-  },
-  emptyCell: {
-    backgroundColor: '#f9fafb',
-  },
-  dayNumber: {
-    fontWeight: '700',
-    fontSize: 12,
-    color: '#1f2937',
-    marginBottom: 4,
-  },
-  eventsList: {
-    gap: 2,
-  },
-  eventTag: {
-    backgroundColor: '#dbeafe',
-    paddingVertical: 3,
-    paddingHorizontal: 4,
-    borderRadius: 3,
-  },
+
   eventTagText: {
-    fontSize: 9,
-    color: '#1e40af',
-    fontWeight: '500',
+    color: "#1e40af",
+    fontWeight: "500",
   },
+
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
     paddingHorizontal: 20,
-    paddingVertical: 24,
-    paddingBottom: 40,
   },
+
+  modalContent: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 20,
+  },
+
   modalTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 16,
-    color: '#1f2937',
+    fontWeight: "700",
+    marginBottom: 10,
   },
-  modalMessage: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 20,
-  },
+
   input: {
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 12,
-    fontSize: 14,
-    color: '#1f2937',
+    borderColor: "#ddd",
+    padding: 10,
+    borderRadius: 6,
+    marginBottom: 10,
   },
+
   modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 20,
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 10,
   },
+
   cancelButton: {
     flex: 1,
-    paddingVertical: 12,
-    backgroundColor: '#e5e7eb',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#9ca3af",
+    padding: 12,
+    borderRadius: 6,
+    alignItems: "center",
   },
+
   confirmButton: {
     flex: 1,
-    paddingVertical: 12,
-    backgroundColor: '#3b82f6',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#3b82f6",
+    padding: 12,
+    borderRadius: 6,
+    alignItems: "center",
   },
+
   deleteButton: {
     flex: 1,
-    paddingVertical: 12,
-    backgroundColor: '#dc2626',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#dc2626",
+    padding: 12,
+    borderRadius: 6,
+    alignItems: "center",
   },
+
   buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 14,
+    color: "#fff",
+    fontWeight: "600",
+  },
+
+  subtitleRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 2,
+    marginBottom: 16,
+  },
+
+  helpModalContent: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 12,
+    width: "85%",
+    alignSelf: "center",
+  },
+
+  helpButton: {
+    backgroundColor: "#3b82f6",
+    padding: 10,
+    borderRadius: 6,
+    alignItems: "center",
+    marginTop: 12,
+    width: "fit-content"
+  },
+
+  helpText: {
+    marginBottom: 8,
+    fontSize: 15,
+    color: "#444",
+  },
+
+  helpRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  statusDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 6,
+    marginBottom: 8,
   },
 });
