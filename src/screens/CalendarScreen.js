@@ -36,6 +36,10 @@ export default function CalendarScreen() {
   const [eventToDelete, setEventToDelete] = useState(null);
   const [initialLoad, setInitialLoad] = useState(true);
 
+  const [addingEvent, setAddingEvent] = useState(false);
+  const [deletingEvent, setDeletingEvent] = useState(false);
+  const [togglingEventId, setTogglingEventId] = useState(null);
+
   const [newEvent, setNewEvent] = useState({
     title: "",
     scheduledDate: selectedDate,
@@ -90,6 +94,8 @@ export default function CalendarScreen() {
       return;
     }
 
+    setAddingEvent(true);
+
     try {
       const res = await api.post(
         "/events",
@@ -121,10 +127,14 @@ export default function CalendarScreen() {
         type: "danger",
         placement: "top",
       });
+    } finally {
+      setAddingEvent(false);
     }
   };
 
   const toggleCompletion = async (event) => {
+    setTogglingEventId(event.id);
+
     try {
       await api.put(
         "/events",
@@ -142,11 +152,15 @@ export default function CalendarScreen() {
         type: "danger",
         placement: "top",
       });
+    } finally {
+      setTogglingEventId(null);
     }
   };
 
   const deleteEvent = async () => {
     if (!eventToDelete) return;
+
+    setDeletingEvent(true);
 
     try {
       await api.delete(`/events/${eventToDelete.id}`, {
@@ -164,6 +178,8 @@ export default function CalendarScreen() {
         type: "danger",
         placement: "top",
       });
+    } finally {
+      setDeletingEvent(false);
     }
   };
 
@@ -253,8 +269,12 @@ export default function CalendarScreen() {
             style={styles.eventTag}
           >
             <View style={styles.eventRow}>
-              {event.completed && (
-                <CheckCircle size={16} color="#22c55e" style={{ marginRight: 6 }} />
+              {togglingEventId === event.id ? (
+                <ActivityIndicator size="small" color="#22c55e" style={{ marginRight: 6 }} />
+              ) : (
+                event.completed && (
+                  <CheckCircle size={16} color="#22c55e" style={{ marginRight: 6 }} />
+                )
               )}
 
               <Text style={styles.eventTagText}>
@@ -275,6 +295,7 @@ export default function CalendarScreen() {
               style={styles.input}
               placeholder="Event title"
               value={newEvent.title}
+              editable={!addingEvent}
               onChangeText={(text) =>
                 setNewEvent({ ...newEvent, title: text })
               }
@@ -291,8 +312,13 @@ export default function CalendarScreen() {
               <Pressable
                 style={styles.confirmButton}
                 onPress={handleAddEvent}
+                disabled={addingEvent}
               >
-                <Text style={styles.buttonText}>Add</Text>
+                {addingEvent ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>Add</Text>
+                )}
               </Pressable>
             </View>
           </View>
@@ -316,8 +342,13 @@ export default function CalendarScreen() {
               <Pressable
                 style={styles.deleteButton}
                 onPress={deleteEvent}
+                disabled={deletingEvent}
               >
-                <Text style={styles.buttonText}>Delete</Text>
+                {deletingEvent ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>Delete</Text>
+                )}
               </Pressable>
             </View>
           </View>
