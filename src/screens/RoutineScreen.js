@@ -26,6 +26,7 @@ export default function RoutineScreen() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(null);
+  const [savingTask, setSavingTask] = useState(false);
 
   const [newTask, setNewTask] = useState({
     title: '',
@@ -35,7 +36,23 @@ export default function RoutineScreen() {
     timesPerWeek: '',
   });
 
-  const frequencies = ['fixed', 'flexible', 'alternate'];
+  const frequencyOptions = [
+    {
+      key: "fixed",
+      title: "Fixed",
+      desc: "Choose specific days you want to complete this task.",
+    },
+    {
+      key: "flexible",
+      title: "Flexible",
+      desc: "Number of times you want to complete this task (weekly).",
+    },
+    {
+      key: "alternate",
+      title: "Alternate",
+      desc: "This task repeats every other day.",
+    },
+  ];
 
   const daysOfWeekOptions = [
     { label: 'Sun', value: 0 },
@@ -69,7 +86,7 @@ export default function RoutineScreen() {
   /* ---------------- VALIDATION ---------------- */
   const validateTask = () => {
     if (!newTask.title.trim() || !newTask.defaultDuration) {
-      toast.show('Title & duration required', { type: 'warning' });
+      toast.show('Title and duration are required', { type: 'warning' });
       return false;
     }
 
@@ -77,7 +94,7 @@ export default function RoutineScreen() {
       newTask.frequency === 'fixed' &&
       newTask.daysOfWeek.length === 0
     ) {
-      toast.show('Select at least one day', { type: 'warning' });
+      toast.show('Please select days', { type: 'warning' });
       return false;
     }
 
@@ -85,7 +102,7 @@ export default function RoutineScreen() {
       newTask.frequency === 'flexible' &&
       !newTask.timesPerWeek
     ) {
-      toast.show('Enter times per week', { type: 'warning' });
+      toast.show('Please enter times per week', { type: 'warning' });
       return false;
     }
 
@@ -96,6 +113,8 @@ export default function RoutineScreen() {
   const handleAddTask = async () => {
     if (!validateTask()) return;
 
+    setSavingTask(true);
+    
     try {
       const res = await api.post(
         '/routine',
@@ -114,10 +133,13 @@ export default function RoutineScreen() {
         }
       );
       // setTasks((prev) => [...prev, res.data]);
+      toast.show("Task added successfully", { type: "success" });
       await fetchRoutine();
       closeModal();
     } catch (err) {
       toast.show('Failed to add task', { type: 'danger' });
+    } finally {
+      setSavingTask(false);
     }
   };
 
@@ -125,6 +147,7 @@ export default function RoutineScreen() {
   const handleUpdateTask = async () => {
     if (!validateTask()) return;
 
+    setSavingTask(true);
     try {
       const res = await api.put(
         `/routine/${selectedTask._id}`,
@@ -142,17 +165,19 @@ export default function RoutineScreen() {
               : undefined,
         }
       );
-
+      toast.show("Task updated successfully", { type: "success" });
       await fetchRoutine();
       closeModal();
     } catch (err) {
       toast.show('Failed to update task', { type: 'danger' });
+    } finally {
+      setSavingTask(false);
     }
   };
 
   /* ---------------- DELETE ---------------- */
-  const deleteTask = (id) => {
-    Alert.alert('Delete Task', 'Are you sure?', [
+  const deleteTask = (id, title) => {
+    Alert.alert('Delete Task', `Are you sure you want to delete the task "${title}"?`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -164,8 +189,9 @@ export default function RoutineScreen() {
               headers: { Authorization: `Bearer ${token}` },
             });
             setTasks((prev) => prev.filter((t) => t._id !== id));
+            toast.show("Task deleted successfully", { type: "success" });
           } catch {
-            toast.show('Delete failed', { type: 'danger' });
+            toast.show('Failed to delete task', { type: 'danger' });
           } finally {
             setDeleteLoading(null);
           }
@@ -256,7 +282,7 @@ export default function RoutineScreen() {
                 task={task}
                 deleteLoading={deleteLoading}
                 onUpdate={() => openUpdateModal(task)}
-                onDelete={() => deleteTask(task._id)}
+                onDelete={() => deleteTask(task._id, task.title)}
               />
             ))}
           </View>
@@ -277,6 +303,7 @@ export default function RoutineScreen() {
               style={styles.input}
               placeholder="Task title"
               value={newTask.title}
+              editable={!savingTask}
               onChangeText={(t) =>
                 setNewTask({ ...newTask, title: t })
               }
@@ -287,13 +314,14 @@ export default function RoutineScreen() {
               placeholder="Duration (minutes)"
               keyboardType="numeric"
               value={newTask.defaultDuration}
+              editable={!savingTask}
               onChangeText={(t) =>
                 setNewTask({ ...newTask, defaultDuration: t })
               }
             />
 
             {/* Frequency */}
-            <View style={styles.frequencyOptions}>
+            {/* <View style={styles.frequencyOptions}>
               {frequencies.map((f) => (
                 <Pressable
                   key={f}
@@ -317,7 +345,39 @@ export default function RoutineScreen() {
                   </Text>
                 </Pressable>
               ))}
+            </View> */}
+            <View style={styles.frequencyRow}>
+              {frequencyOptions.map((item) => (
+                <Pressable
+                  key={item.key}
+                  style={[
+                    styles.frequencyBtn,
+                    newTask.frequency === item.key && styles.frequencyBtnActive,
+                  ]}
+                  onPress={() =>
+                    setNewTask({ ...newTask, frequency: item.key })
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.frequencyBtnText,
+                      newTask.frequency === item.key &&
+                        styles.frequencyBtnTextActive,
+                    ]}
+                  >
+                    {item.title}
+                  </Text>
+                </Pressable>
+              ))}
             </View>
+
+            <Text style={styles.frequencyHelp}>
+              {
+                frequencyOptions.find(
+                  (f) => f.key === newTask.frequency
+                )?.desc
+              }
+            </Text>
 
             {/* Days */}
             {newTask.frequency === 'fixed' && (
@@ -330,6 +390,7 @@ export default function RoutineScreen() {
                       newTask.daysOfWeek.includes(d.value) &&
                       styles.dayButtonActive,
                     ]}
+                    disabled={savingTask}
                     onPress={() => toggleDay(d.value)}
                   >
                     <Text
@@ -353,6 +414,7 @@ export default function RoutineScreen() {
                 placeholder="Times per week"
                 keyboardType="numeric"
                 value={newTask.timesPerWeek}
+                editable={!savingTask}
                 onChangeText={(t) =>
                   setNewTask({ ...newTask, timesPerWeek: t })
                 }
@@ -365,13 +427,18 @@ export default function RoutineScreen() {
               </Pressable>
               <Pressable
                 style={styles.confirmButton}
+                disabled={savingTask}
                 onPress={
                   selectedTask ? handleUpdateTask : handleAddTask
                 }
               >
-                <Text style={{ color: '#fff' }}>
-                  {selectedTask ? 'Update' : 'Add'}
-                </Text>
+                {savingTask ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={{ color: "#fff" }}>
+                    {selectedTask ? "Update" : "Add"}
+                  </Text>
+                )}
               </Pressable>
             </View>
           </View>
@@ -546,16 +613,86 @@ const styles = StyleSheet.create({
   frequencyButtonText: { fontSize: 12 },
   frequencyButtonTextActive: { color: '#fff' },
 
-  daysGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  frequencyList: {
+    gap: 10,
+    marginBottom: 10,
+  },
+
+  frequencyCard: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 10,
+    padding: 12,
+  },
+
+  frequencyCardActive: {
+    borderColor: "#3b82f6",
+    backgroundColor: "#eff6ff",
+  },
+
+  frequencyTitle: {
+    fontWeight: "600",
+    fontSize: 15,
+  },
+
+  frequencyDesc: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 3,
+  },
+
+  frequencyRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 6,
+  },
+
+  frequencyBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+
+  frequencyBtnActive: {
+    backgroundColor: "#2563eb",
+    borderColor: "#2563eb",
+  },
+
+  frequencyBtnText: {
+    fontSize: 13,
+    color: "#374151",
+    fontWeight: "500",
+  },
+
+  frequencyBtnTextActive: {
+    color: "#fff",
+  },
+
+  frequencyHelp: {
+    fontSize: 12,
+    color: "#6b7280",
+    marginBottom: 8,
+  },
+
+  helperText: {
+    fontSize: 12,
+    color: "#666",
+    marginBottom: 8,
+  },
+
+  daysGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   dayButton: {
-    width: '30%',
+    width: '18%',
     borderWidth: 1,
     borderRadius: 6,
-    padding: 8,
+    padding: 6,
     alignItems: 'center',
   },
   dayButtonActive: { backgroundColor: '#3b82f6' },
-  dayButtonText: { fontSize: 12 },
+  dayButtonText: { fontSize: 11, fontWeight: 600 },
   dayButtonTextActive: { color: '#fff' },
 
   modalButtons: { flexDirection: 'row', gap: 12, marginTop: 16 },

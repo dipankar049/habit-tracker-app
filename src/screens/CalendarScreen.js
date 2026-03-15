@@ -270,7 +270,7 @@ export default function CalendarScreen() {
           >
             <View style={styles.eventRow}>
               {togglingEventId === event.id ? (
-                <ActivityIndicator size="small" color="#22c55e" style={{ marginRight: 6 }} />
+                <ActivityIndicator size="small" style={{ marginRight: 6 }} />
               ) : (
                 event.completed && (
                   <CheckCircle size={16} color="#22c55e" style={{ marginRight: 6 }} />
@@ -431,7 +431,8 @@ const styles = StyleSheet.create({
   },
 
   eventsContainer: {
-    marginTop: 16,
+    marginTop: 12,
+    marginBottom: 20,
     gap: 8,
   },
 
