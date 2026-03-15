@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
 import api from '../services/api';
+import WeeklyBarChart from "../components/WeeklyBarChart";
+import TaskBreakdownChart from "../components/TaskBreakdownChart";
 
 const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -68,114 +70,34 @@ export default function WeeklySummaryScreen() {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <Text style={styles.title}>📊 Weekly Summary</Text>
-      <Text style={styles.subtitle}>Total time spent per day on your tasks</Text>
-
-      {/* Weekly Overview Card */}
-      <View style={styles.weeklyCard}>
-        <FlatList
-          scrollEnabled={false}
-          data={summary}
-          keyExtractor={(item) => item.date}
-          numColumns={7}
-          renderItem={({ item }) => {
-            const isSelected = item.date === selectedDate;
-            const totalTime = getTotalTime(item);
-
-            return (
-              <Pressable
-                style={[
-                  styles.dayCard,
-                  isSelected && styles.dayCardSelected,
-                ]}
-                onPress={() => setSelectedDate(item.date)}
-              >
-                <Text style={styles.dayCardName}>{item.dayName}</Text>
-                <Text
-                  style={[
-                    styles.dayCardTime,
-                    isSelected && styles.dayCardTimeSelected,
-                  ]}
-                >
-                  {totalTime}m
-                </Text>
-              </Pressable>
-            );
-          }}
-        />
-      </View>
-
-      {/* Task Breakdown */}
-      <View style={styles.breakdownCard}>
-        <Text style={styles.breakdownTitle}>
-          Task Breakdown for {selectedDayData ? selectedDayData.dayName : 'N/A'}
+      <View style={styles.card}>
+        <Text style={styles.title}>Weekly Summary</Text>
+        <Text style={styles.subtitle}>
+          Track how much time you spend on your habits
         </Text>
 
-        {selectedDayData && selectedDayData.tasks && selectedDayData.tasks.length > 0 ? (
-          <View style={styles.tasksList}>
-            {selectedDayData.tasks.map((task, idx) => {
-              const totalDuration = getTotalTime(selectedDayData);
-              const percentage = totalDuration > 0
-                ? (task.duration / totalDuration) * 100
-                : 0;
+        <WeeklyBarChart
+          data={summary}
+          selectedDate={selectedDate}
+          onBarClick={setSelectedDate}
+        />
 
-              return (
-                <View key={idx} style={styles.taskItem}>
-                  <View style={styles.taskHeader}>
-                    <Text style={styles.taskName} numberOfLines={1}>
-                      {task.name}
-                    </Text>
-                    <Text style={styles.taskTime}>{task.duration}m</Text>
-                  </View>
-                  <View style={styles.progressBar}>
-                    <View
-                      style={[
-                        styles.progressFill,
-                        { width: `${percentage}%` },
-                      ]}
-                    />
-                  </View>
-                  <Text style={styles.percentageText}>
-                    {percentage.toFixed(1)}% of daily time
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No tasks logged for this day</Text>
-          </View>
-        )}
-
-        {/* Daily Summary Stats */}
-        {selectedDayData && (
-          <View style={styles.statsGrid}>
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>
-                {getTotalTime(selectedDayData)}
-              </Text>
-              <Text style={styles.statLabel}>Minutes</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>
-                {selectedDayData.tasks ? selectedDayData.tasks.length : 0}
-              </Text>
-              <Text style={styles.statLabel}>Tasks</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>
-                {selectedDayData.tasks && selectedDayData.tasks.length > 0
-                  ? (getTotalTime(selectedDayData) / selectedDayData.tasks.length).toFixed(0)
-                  : 0}
-              </Text>
-              <Text style={styles.statLabel}>Avg/Task</Text>
-            </View>
-          </View>
-        )}
+        <Text style={styles.caption}>
+          Total time spent per day on your tasks
+        </Text>
       </View>
 
-      <View style={{ height: 40 }} />
+      <View style={styles.card}>
+        <Text style={styles.breakdownTitle}>
+          Task Breakdown for {selectedDayData?.dayName || ""}
+        </Text>
+
+        {selectedDayData?.tasks?.length > 0 ? (
+          <TaskBreakdownChart tasks={selectedDayData.tasks} />
+        ) : (
+          <Text>No tasks logged for this day</Text>
+        )}
+      </View>
     </ScrollView>
   );
 }
@@ -344,4 +266,29 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     fontWeight: '600',
   },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    elevation: 3
+  },
+
+  title: {
+    fontSize: 22,
+    fontWeight: "700",
+    textAlign: "center"
+  },
+
+  subtitle: {
+    textAlign: "center",
+    color: "#666",
+    marginBottom: 12
+  },
+
+  caption: {
+    textAlign: "center",
+    color: "#777",
+    marginTop: 8
+  }
 });
