@@ -13,9 +13,11 @@ import {
 } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
 import api from '../services/api';
+import { useToast } from 'react-native-toast-notifications';
 
 export default function RoutineScreen() {
   const { token } = useAuth();
+  const toast = useToast();
 
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -68,7 +70,6 @@ export default function RoutineScreen() {
   const validateTask = () => {
     if (!newTask.title.trim() || !newTask.defaultDuration) {
       toast.show('Title & duration required', { type: 'warning' });
-      console.log("Returning...")
       return false;
     }
 

@@ -13,6 +13,9 @@ export default function App() {
     <SafeAreaProvider>
       <AuthProvider>
         <ToastProvider
+          placement="top"
+          duration={3000}
+          animationType="slide-in"
           offsetTop={STATUS_BAR_HEIGHT + 10}
         >
           <NavigationContainer>
