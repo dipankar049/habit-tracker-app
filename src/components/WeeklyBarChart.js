@@ -11,7 +11,7 @@ export default function WeeklyBarChart({ data, selectedDate, onBarClick }) {
         return {
             value: total,
             label: item.dayName,
-            frontColor: item.date === selectedDate ? "#2563eb" : "#bfdbfe",
+            frontColor: item.date === selectedDate ? "#7c3aed" : "#a78bfa",
             onPress: () => onBarClick(item.date),
         };
     });
@@ -30,7 +30,7 @@ export default function WeeklyBarChart({ data, selectedDate, onBarClick }) {
         <BarChart
             data={chartData}
             barWidth={26}
-            spacing={18}
+            spacing={12}
             roundedTop
             barBorderRadius={6}
             hideRules

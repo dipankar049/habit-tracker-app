@@ -198,7 +198,7 @@ export default function CalendarScreen() {
     marked[selectedDate] = {
       ...(marked[selectedDate] || {}),
       selected: true,
-      selectedColor: "#3b82f6",
+      selectedColor: "#7c3aed",
     };
 
     return marked;
@@ -229,7 +229,7 @@ export default function CalendarScreen() {
         </Pressable>
       </View>
       {!initialLoad && loading && (
-        <ActivityIndicator style={{ marginVertical: 10 }} />
+        <ActivityIndicator color="#7c3aed" style={{ marginVertical: 10 }} />
       )}
       <Calendar
         onDayPress={(day) => {
@@ -245,8 +245,8 @@ export default function CalendarScreen() {
         }}
         markedDates={getMarkedDates()}
         theme={{
-          todayTextColor: "#3b82f6",
-          arrowColor: "#3b82f6",
+          todayTextColor: "#7c3aed",
+          arrowColor: "#7c3aed",
         }}
       />
 
@@ -270,7 +270,7 @@ export default function CalendarScreen() {
           >
             <View style={styles.eventRow}>
               {togglingEventId === event.id ? (
-                <ActivityIndicator size="small" style={{ marginRight: 6 }} />
+                <ActivityIndicator size="small" color="#7c3aed" style={{ marginRight: 6 }} />
               ) : (
                 event.completed && (
                   <CheckCircle size={16} color="#22c55e" style={{ marginRight: 6 }} />
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
   },
 
   addButton: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: "#7c3aed",
     padding: 12,
     borderRadius: 8,
     alignItems: "center",
@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
   },
 
   eventTag: {
-    backgroundColor: "#dbeafe",
+    backgroundColor: "#ede9fe",
     padding: 10,
     borderRadius: 6,
   },

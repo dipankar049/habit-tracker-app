@@ -65,7 +65,7 @@ export default function WeeklySummaryScreen() {
 
   const getTotalTime = (data) => {
     if (!data || !data.tasks) return 0;
-    return data.tasks.reduce((sum, task) => sum + (task.duration || 0), 0);
+    return data.tasks.reduce((sum, task) => sum + (task.timeSpent || 0), 0);
   };
 
   return (
@@ -85,17 +85,19 @@ export default function WeeklySummaryScreen() {
         <Text style={styles.caption}>
           Total time spent per day on your tasks
         </Text>
-      </View>
 
-      <View style={styles.card}>
+        <View style={styles.divider} />
+
         <Text style={styles.breakdownTitle}>
-          Task Breakdown for {selectedDayData?.dayName || ""}
+          {selectedDayData?.dayName} • {getTotalTime(selectedDayData)} min
         </Text>
 
         {selectedDayData?.tasks?.length > 0 ? (
           <TaskBreakdownChart tasks={selectedDayData.tasks} />
         ) : (
-          <Text>No tasks logged for this day</Text>
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyText}>No tasks logged for this day</Text>
+          </View>
         )}
       </View>
     </ScrollView>
@@ -106,8 +108,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f3f4f6',
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    padding: 12,
   },
   center: {
     flex: 1,
@@ -118,160 +119,28 @@ const styles = StyleSheet.create({
     marginTop: 12,
     color: '#666',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  weeklyCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  dayCard: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 4,
-    marginHorizontal: 2,
-    borderRadius: 8,
-    backgroundColor: '#f3f4f6',
-  },
-  dayCardSelected: {
-    backgroundColor: '#3b82f6',
-  },
-  dayCardName: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#6b7280',
-    marginBottom: 4,
-  },
-  dayCardTime: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1f2937',
-  },
-  dayCardTimeSelected: {
-    color: '#fff',
-  },
-  breakdownCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
   breakdownTitle: {
     fontSize: 16,
     fontWeight: '700',
     color: '#1f2937',
-    marginBottom: 16,
     textAlign: 'center',
   },
-  tasksList: {
-    gap: 12,
-    marginBottom: 16,
-  },
-  taskItem: {
-    backgroundColor: '#f9fafb',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#3b82f6',
-  },
-  taskHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  taskName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1f2937',
-    flex: 1,
-  },
-  taskTime: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#3b82f6',
-    marginLeft: 8,
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: '#e5e7eb',
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginBottom: 6,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#3b82f6',
-    borderRadius: 3,
-  },
-  percentageText: {
-    fontSize: 11,
-    color: '#9ca3af',
-    textAlign: 'right',
-  },
-  emptyState: {
-    paddingVertical: 32,
-    alignItems: 'center',
-  },
-  emptyStateText: {
-    fontSize: 14,
-    color: '#9ca3af',
-    fontStyle: 'italic',
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 12,
-  },
-  statBox: {
-    flex: 1,
-    backgroundColor: '#f0f9ff',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#3b82f6',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: '#6b7280',
-    fontWeight: '600',
-  },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: "#ffffff",
     borderRadius: 16,
-    padding: 16,
+    padding: 14,
     marginBottom: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
     elevation: 3
+  },
+
+  divider: {
+    height: 1,
+    backgroundColor: "#e5e7eb",
+    marginVertical: 16
   },
 
   title: {
@@ -290,5 +159,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#777",
     marginTop: 8
+  },
+  emptyBox: {
+    paddingVertical: 20,
+    alignItems: "center"
+  },
+
+  emptyText: {
+    color: "#6b7280",
+    fontSize: 14
   }
 });
