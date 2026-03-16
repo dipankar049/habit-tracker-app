@@ -18,7 +18,7 @@ export default function Menubar({ isOpen, closeSidebar, navigation }) {
     { icon: ClipboardList, label: "Set Routine", screen: "Routine" },
     { icon: Calendar, label: "Calendar", screen: "Calendar" },
     { icon: BarChart3, label: "Weekly Summary", screen: "WeeklySummary" },
-    // { icon: ChartPie, label: 'Summary', screen: 'Summary' },
+    { icon: ChartPie, label: 'Summary', screen: 'Summary' },
     { icon: MessageCircle, label: "Contact Us", screen: "Contact" },
     // { icon: LogOut, label: "Logout", screen: null, isLogout: true },
   ];
