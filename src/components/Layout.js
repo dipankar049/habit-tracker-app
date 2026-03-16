@@ -13,14 +13,17 @@ export default function Layout({ children, navigation }) {
 
   return (
     <SafeAreaView style={[styles.container, { paddingVertical: insets.top }]}>
-      <Navbar toggleSidebar={toggleSidebar} />
-      <Menubar 
-        isOpen={sidebarOpen} 
-        closeSidebar={closeSidebar} 
-        navigation={navigation}
-      />
+      <Navbar toggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />
       <View style={styles.content}>
+
         {children}
+
+        <Menubar
+          isOpen={sidebarOpen}
+          closeSidebar={closeSidebar}
+          navigation={navigation}
+        />
+
       </View>
     </SafeAreaView>
   );

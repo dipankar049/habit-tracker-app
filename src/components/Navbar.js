@@ -1,9 +1,9 @@
 import { View, Text, Pressable, StyleSheet, Image } from "react-native";
 import { useAuth } from "../auth/AuthContext";
 import { useNavigation } from "@react-navigation/native";
-import { LogIn, UserPlus, Menu } from "lucide-react-native";
+import { LogIn, UserPlus, Menu, X } from "lucide-react-native";
 
-export default function Navbar({ toggleSidebar }) {
+export default function Navbar({ toggleSidebar, sidebarOpen }) {
   const { user, logout } = useAuth();
   const navigation = useNavigation();
 
@@ -14,7 +14,11 @@ export default function Navbar({ toggleSidebar }) {
       <View style={styles.left}>
         {user && (
           <Pressable onPress={toggleSidebar} style={styles.menuBtn}>
-            <Menu size={22} color="#374151" />
+            {sidebarOpen ? (
+              <X size={22} color="#374151" />
+            ) : (
+              <Menu size={22} color="#374151" />
+            )}
           </Pressable>
         )}
 
