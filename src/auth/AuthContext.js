@@ -21,21 +21,34 @@ export function AuthProvider({ children }) {
           if (storedUser) setUser(JSON.parse(storedUser));
 
           // verify token
-          const res = await api.get('/auth/verifyToken', {
-            headers: {
-              Authorization: `Bearer ${storedToken}`,
-            },
-          });
+          try {
+            const res = await api.get('/auth/verifyToken', {
+              headers: {
+                Authorization: `Bearer ${storedToken}`,
+              },
+            });
 
-          setUser(res.data.user);
-          await AsyncStorage.setItem(
-            'habit_tracker_user',
-            JSON.stringify(res.data.user)
-          );
+            setUser(res.data.user);
+
+            await AsyncStorage.setItem(
+              'habit_tracker_user',
+              JSON.stringify(res.data.user)
+            );
+
+          } catch (err) {
+
+            if (err.response) {
+              // Server responded, token invalid
+              console.log("Token expired, logout");
+              await logout();
+            } else {
+              // No internet, allow offline mode
+              console.log("Offline mode, using stored user");
+            }
+          }
         }
       } catch (err) {
         console.log('Token invalid or expired');
-        await logout();
       } finally {
         setLoading(false);
       }
