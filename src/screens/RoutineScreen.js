@@ -10,6 +10,8 @@ import {
   TextInput,
   Alert,
   RefreshControl,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
 import api from '../services/api';
@@ -293,156 +295,161 @@ export default function RoutineScreen() {
 
       {/* Modal */}
       <Modal visible={isModalOpen} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              {selectedTask ? 'Update Task' : 'Add Task'}
-            </Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>
+                {selectedTask ? 'Update Task' : 'Add Task'}
+              </Text>
 
-            <TextInput
-              style={styles.input}
-              placeholder="Task title"
-              value={newTask.title}
-              editable={!savingTask}
-              onChangeText={(t) =>
-                setNewTask({ ...newTask, title: t })
-              }
-            />
+              <TextInput
+                style={styles.input}
+                placeholder="Task title"
+                value={newTask.title}
+                editable={!savingTask}
+                onChangeText={(t) =>
+                  setNewTask({ ...newTask, title: t })
+                }
+              />
 
-            <TextInput
-              style={styles.input}
-              placeholder="Duration (minutes)"
-              keyboardType="numeric"
-              value={newTask.defaultDuration}
-              editable={!savingTask}
-              onChangeText={(t) =>
-                setNewTask({ ...newTask, defaultDuration: t })
-              }
-            />
+              <TextInput
+                style={styles.input}
+                placeholder="Duration (minutes)"
+                keyboardType="numeric"
+                value={newTask.defaultDuration}
+                editable={!savingTask}
+                onChangeText={(t) =>
+                  setNewTask({ ...newTask, defaultDuration: t })
+                }
+              />
 
-            {/* Frequency */}
-            {/* <View style={styles.frequencyOptions}>
-              {frequencies.map((f) => (
-                <Pressable
-                  key={f}
-                  style={[
-                    styles.frequencyButton,
-                    newTask.frequency === f &&
-                    styles.frequencyButtonActive,
-                  ]}
-                  onPress={() =>
-                    setNewTask({ ...newTask, frequency: f })
-                  }
-                >
-                  <Text
-                    style={[
-                      styles.frequencyButtonText,
-                      newTask.frequency === f &&
-                      styles.frequencyButtonTextActive,
-                    ]}
-                  >
-                    {f}
-                  </Text>
-                </Pressable>
-              ))}
-            </View> */}
-            <View style={styles.frequencyRow}>
-              {frequencyOptions.map((item) => (
-                <Pressable
-                  key={item.key}
-                  style={[
-                    styles.frequencyBtn,
-                    newTask.frequency === item.key && styles.frequencyBtnActive,
-                  ]}
-                  onPress={() =>
-                    setNewTask({ ...newTask, frequency: item.key })
-                  }
-                >
-                  <Text
-                    style={[
-                      styles.frequencyBtnText,
-                      newTask.frequency === item.key &&
-                        styles.frequencyBtnTextActive,
-                    ]}
-                  >
-                    {item.title}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-
-            <Text style={styles.frequencyHelp}>
-              {
-                frequencyOptions.find(
-                  (f) => f.key === newTask.frequency
-                )?.desc
-              }
-            </Text>
-
-            {/* Days */}
-            {newTask.frequency === 'fixed' && (
-              <View style={styles.daysGrid}>
-                {daysOfWeekOptions.map((d) => (
+              {/* Frequency */}
+              {/* <View style={styles.frequencyOptions}>
+                {frequencies.map((f) => (
                   <Pressable
-                    key={d.value}
+                    key={f}
                     style={[
-                      styles.dayButton,
-                      newTask.daysOfWeek.includes(d.value) &&
-                      styles.dayButtonActive,
+                      styles.frequencyButton,
+                      newTask.frequency === f &&
+                      styles.frequencyButtonActive,
                     ]}
-                    disabled={savingTask}
-                    onPress={() => toggleDay(d.value)}
+                    onPress={() =>
+                      setNewTask({ ...newTask, frequency: f })
+                    }
                   >
                     <Text
                       style={[
-                        styles.dayButtonText,
-                        newTask.daysOfWeek.includes(d.value) &&
-                        styles.dayButtonTextActive,
+                        styles.frequencyButtonText,
+                        newTask.frequency === f &&
+                        styles.frequencyButtonTextActive,
                       ]}
                     >
-                      {d.label}
+                      {f}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View> */}
+              <View style={styles.frequencyRow}>
+                {frequencyOptions.map((item) => (
+                  <Pressable
+                    key={item.key}
+                    style={[
+                      styles.frequencyBtn,
+                      newTask.frequency === item.key && styles.frequencyBtnActive,
+                    ]}
+                    onPress={() =>
+                      setNewTask({ ...newTask, frequency: item.key })
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.frequencyBtnText,
+                        newTask.frequency === item.key &&
+                          styles.frequencyBtnTextActive,
+                      ]}
+                    >
+                      {item.title}
                     </Text>
                   </Pressable>
                 ))}
               </View>
-            )}
 
-            {/* Times per week */}
-            {newTask.frequency === 'flexible' && (
-              <TextInput
-                style={styles.input}
-                placeholder="Times per week"
-                keyboardType="numeric"
-                value={newTask.timesPerWeek}
-                editable={!savingTask}
-                onChangeText={(t) =>
-                  setNewTask({ ...newTask, timesPerWeek: t })
+              <Text style={styles.frequencyHelp}>
+                {
+                  frequencyOptions.find(
+                    (f) => f.key === newTask.frequency
+                  )?.desc
                 }
-              />
-            )}
+              </Text>
 
-            <View style={styles.modalButtons}>
-              <Pressable style={styles.cancelButton} onPress={closeModal}>
-                <Text>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={styles.confirmButton}
-                disabled={savingTask}
-                onPress={
-                  selectedTask ? handleUpdateTask : handleAddTask
-                }
-              >
-                {savingTask ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={{ color: "#fff" }}>
-                    {selectedTask ? "Update" : "Add"}
-                  </Text>
-                )}
-              </Pressable>
+              {/* Days */}
+              {newTask.frequency === 'fixed' && (
+                <View style={styles.daysGrid}>
+                  {daysOfWeekOptions.map((d) => (
+                    <Pressable
+                      key={d.value}
+                      style={[
+                        styles.dayButton,
+                        newTask.daysOfWeek.includes(d.value) &&
+                        styles.dayButtonActive,
+                      ]}
+                      disabled={savingTask}
+                      onPress={() => toggleDay(d.value)}
+                    >
+                      <Text
+                        style={[
+                          styles.dayButtonText,
+                          newTask.daysOfWeek.includes(d.value) &&
+                          styles.dayButtonTextActive,
+                        ]}
+                      >
+                        {d.label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+
+              {/* Times per week */}
+              {newTask.frequency === 'flexible' && (
+                <TextInput
+                  style={styles.input}
+                  placeholder="Times per week"
+                  keyboardType="numeric"
+                  value={newTask.timesPerWeek}
+                  editable={!savingTask}
+                  onChangeText={(t) =>
+                    setNewTask({ ...newTask, timesPerWeek: t })
+                  }
+                />
+              )}
+
+              <View style={styles.modalButtons}>
+                <Pressable style={styles.cancelButton} onPress={closeModal}>
+                  <Text>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.confirmButton}
+                  disabled={savingTask}
+                  onPress={
+                    selectedTask ? handleUpdateTask : handleAddTask
+                  }
+                >
+                  {savingTask ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={{ color: "#fff" }}>
+                      {selectedTask ? "Update" : "Add"}
+                    </Text>
+                  )}
+                </Pressable>
+              </View>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

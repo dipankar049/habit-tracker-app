@@ -5,7 +5,9 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 
 import { useNavigation } from "@react-navigation/native";
@@ -84,104 +86,109 @@ export default function RegisterScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1 }}
+    >
+      <View style={styles.container}>
 
-      {/* Header */}
-      <View style={styles.header}>
+        {/* Header */}
+        <View style={styles.header}>
 
-        {/* <View style={styles.logo}>
-          <Text style={styles.logoText}>H</Text>
-        </View> */}
+          {/* <View style={styles.logo}>
+            <Text style={styles.logoText}>H</Text>
+          </View> */}
 
-        <Text style={styles.appName}>HabitTracker</Text>
-        <Text style={styles.subtitle}>
-          Start building better habits
-        </Text>
-
-      </View>
-
-      {/* Card */}
-      <View style={styles.card}>
-
-        <Text style={styles.title}>Create Account</Text>
-
-        <TextInput
-          placeholder="Username"
-          placeholderTextColor="#9ca3af"
-          style={styles.input}
-          value={form.username}
-          onChangeText={(text) =>
-            setForm({ ...form, username: text })
-          }
-          editable={!loading}
-        />
-
-        <TextInput
-          placeholder="Email"
-          placeholderTextColor="#9ca3af"
-          style={styles.input}
-          value={form.email}
-          onChangeText={(text) =>
-            setForm({ ...form, email: text })
-          }
-          keyboardType="email-address"
-          autoCapitalize="none"
-          editable={!loading}
-        />
-
-        {/* Password with eye toggle */}
-        <View style={styles.passwordWrapper}>
-
-          <TextInput
-            placeholder="Password"
-            placeholderTextColor="#9ca3af"
-            style={styles.passwordInput}
-            value={form.password}
-            onChangeText={(text) =>
-              setForm({ ...form, password: text })
-            }
-            secureTextEntry={!showPassword}
-            editable={!loading}
-          />
-
-          <TouchableOpacity
-            onPress={() => setShowPassword(!showPassword)}
-            style={styles.eyeButton}
-          >
-            {showPassword
-              ? <EyeOff size={20} color="#6b7280" />
-              : <Eye size={20} color="#6b7280" />
-            }
-          </TouchableOpacity>
+          <Text style={styles.appName}>HabitTracker</Text>
+          <Text style={styles.subtitle}>
+            Start building better habits
+          </Text>
 
         </View>
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleRegister}
-          disabled={loading}
-        >
+        {/* Card */}
+        <View style={styles.card}>
 
-          {loading
-            ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.buttonText}>Create Account</Text>
-          }
+          <Text style={styles.title}>Create Account</Text>
 
-        </TouchableOpacity>
+          <TextInput
+            placeholder="Username"
+            placeholderTextColor="#9ca3af"
+            style={styles.input}
+            value={form.username}
+            onChangeText={(text) =>
+              setForm({ ...form, username: text })
+            }
+            editable={!loading}
+          />
 
-        <Text style={styles.footerText}>
-          Already have an account?{" "}
-          <Text
-            style={styles.link}
-            onPress={() => !loading && navigation.navigate("Login")}
+          <TextInput
+            placeholder="Email"
+            placeholderTextColor="#9ca3af"
+            style={styles.input}
+            value={form.email}
+            onChangeText={(text) =>
+              setForm({ ...form, email: text })
+            }
+            keyboardType="email-address"
+            autoCapitalize="none"
+            editable={!loading}
+          />
+
+          {/* Password with eye toggle */}
+          <View style={styles.passwordWrapper}>
+
+            <TextInput
+              placeholder="Password"
+              placeholderTextColor="#9ca3af"
+              style={styles.passwordInput}
+              value={form.password}
+              onChangeText={(text) =>
+                setForm({ ...form, password: text })
+              }
+              secureTextEntry={!showPassword}
+              editable={!loading}
+            />
+
+            <TouchableOpacity
+              onPress={() => setShowPassword(!showPassword)}
+              style={styles.eyeButton}
+            >
+              {showPassword
+                ? <EyeOff size={20} color="#6b7280" />
+                : <Eye size={20} color="#6b7280" />
+              }
+            </TouchableOpacity>
+
+          </View>
+
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleRegister}
+            disabled={loading}
           >
-            Login here
+
+            {loading
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={styles.buttonText}>Create Account</Text>
+            }
+
+          </TouchableOpacity>
+
+          <Text style={styles.footerText}>
+            Already have an account?{" "}
+            <Text
+              style={styles.link}
+              onPress={() => !loading && navigation.navigate("Login")}
+            >
+              Login here
+            </Text>
           </Text>
-        </Text>
+
+        </View>
 
       </View>
-
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -191,7 +198,7 @@ const styles = StyleSheet.create({
     flex: 1,
     // justifyContent: "center",
     padding: 24,
-    paddingTop: 120,
+    justifyContent: "center",
     backgroundColor: "#f8fafc",
   },
 

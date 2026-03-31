@@ -5,7 +5,9 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 
 import { Eye, EyeOff } from "lucide-react-native";
@@ -75,91 +77,96 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1 }}
+    >
+      <View style={styles.container}>
 
-      {/* Header */}
-      <View style={styles.header}>
-        {/* <View style={styles.logo}>
-          <Text style={styles.logoText}>H</Text>
-        </View> */}
+        {/* Header */}
+        <View style={styles.header}>
+          {/* <View style={styles.logo}>
+            <Text style={styles.logoText}>H</Text>
+          </View> */}
 
-        <Text style={styles.appName}>HabitTracker</Text>
-        <Text style={styles.subtitle}>
-          Build better habits every day
-        </Text>
-      </View>
+          <Text style={styles.appName}>HabitTracker</Text>
+          <Text style={styles.subtitle}>
+            Build better habits every day
+          </Text>
+        </View>
 
-      {/* Login Card */}
-      <View style={styles.card}>
+        {/* Login Card */}
+        <View style={styles.card}>
 
-        <Text style={styles.title}>Welcome Back</Text>
-
-        <TextInput
-          placeholder="Email"
-          placeholderTextColor="#9ca3af"
-          value={form.email}
-          onChangeText={(text) =>
-            setForm({ ...form, email: text })
-          }
-          style={styles.input}
-          autoCapitalize="none"
-          editable={!loading}
-        />
-
-        <View style={styles.passwordWrapper}>
+          <Text style={styles.title}>Welcome Back</Text>
 
           <TextInput
-            placeholder="Password"
+            placeholder="Email"
             placeholderTextColor="#9ca3af"
-            value={form.password}
+            value={form.email}
             onChangeText={(text) =>
-              setForm({ ...form, password: text })
+              setForm({ ...form, email: text })
             }
-            style={styles.passwordInput}
-            secureTextEntry={!showPassword}
+            style={styles.input}
+            autoCapitalize="none"
             editable={!loading}
           />
 
+          <View style={styles.passwordWrapper}>
+
+            <TextInput
+              placeholder="Password"
+              placeholderTextColor="#9ca3af"
+              value={form.password}
+              onChangeText={(text) =>
+                setForm({ ...form, password: text })
+              }
+              style={styles.passwordInput}
+              secureTextEntry={!showPassword}
+              editable={!loading}
+            />
+
+            <TouchableOpacity
+              onPress={() => setShowPassword(!showPassword)}
+              style={styles.eyeButton}
+            >
+              {showPassword
+                ? <EyeOff size={20} color="#6b7280" />
+                : <Eye size={20} color="#6b7280" />
+              }
+            </TouchableOpacity>
+
+          </View>
+
           <TouchableOpacity
-            onPress={() => setShowPassword(!showPassword)}
-            style={styles.eyeButton}
+            style={styles.button}
+            onPress={handleLogin}
+            disabled={loading}
           >
-            {showPassword
-              ? <EyeOff size={20} color="#6b7280" />
-              : <Eye size={20} color="#6b7280" />
+            {loading
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={styles.buttonText}>Login</Text>
             }
           </TouchableOpacity>
 
+          <Text style={styles.footer}>
+            Don't have an account?{" "}
+            <Text
+              style={styles.link}
+              onPress={() => navigation.navigate("Register")}
+            >
+              Register
+            </Text>
+          </Text>
+
         </View>
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          {loading
-            ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.buttonText}>Login</Text>
-          }
-        </TouchableOpacity>
-
-        <Text style={styles.footer}>
-          Don't have an account?{" "}
-          <Text
-            style={styles.link}
-            onPress={() => navigation.navigate("Register")}
-          >
-            Register
-          </Text>
+        <Text style={styles.quote}>
+          "Small habits build big change."
         </Text>
 
       </View>
-
-      <Text style={styles.quote}>
-        "Small habits build big change."
-      </Text>
-
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
